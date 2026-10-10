@@ -42,6 +42,8 @@ NPPES_URL = "https://npiregistry.cms.hhs.gov/api/"
 # Tesseract binary. Windows: install from github.com/UB-Mannheim/tesseract/wiki, then
 # TESSERACT_CMD=C:\\Program Files\\Tesseract-OCR\\tesseract.exe  (leave empty on mac/linux)
 TESSERACT_CMD = os.getenv("TESSERACT_CMD", "")
+if not TESSERACT_CMD and os.name == "nt" and Path(r"C:\Program Files\Tesseract-OCR\tesseract.exe").exists():
+    TESSERACT_CMD = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 if TESSERACT_CMD:
     import pytesseract as _pt
     _pt.pytesseract.tesseract_cmd = TESSERACT_CMD
