@@ -59,11 +59,36 @@ def _source(drug: str, fact: str) -> str:
     return "prism_kb" if content and fact.lower() in content.lower() else "local"
 
 
-def drug_exists(drug_text: str) -> Check:
+@lru_cache(maxsize=256)
+def rxnav_product(drug: str, strength: str | None) -> tuple[bool, str]:
+    """Live RxNav: does a product with this name (and strength) exist? Evidence of existence only."""
+    if config.OFFLINE:
+        return False, "offline mode: live RxNav lookup disabled"
+    try:
+        r = httpx.get(f"{config.RXNAV_URL}/approximateTerm.json",
+                      params={"term": f"{drug} {strength or ''}".strip(), "maxEntries": 5}, timeout=4)
+        cands = r.json().get("approximateGroup", {}).get("candidate", [])
+    except (httpx.HTTPError, ValueError) as e:
+        return False, f"RxNav unreachable ({type(e).__name__})"
+    names = [c.get("name", "") for c in cands if c.get("name")]
+    want = drug.lower().split()[0]
+    m = re.search(r"\d+(?:\.\d+)?", strength or "")
+    num = m.group() if m else None
+    for n in names:
+        if want in n.lower() and (not num or num in n):
+            return True, f"RxNav lists {n}"
+    return False, "RxNav: no matching product" + (f" (closest: {names[0]})" if names else "")
+
+
+def drug_exists(drug_text: str, strength: str | None = None) -> Check:
     c = canonical(drug_text)
     if c is None:
+        ok, why = rxnav_product(drug_text.lower().strip(" .,"), strength)
+        if ok:
+            return Check(name="drug_reference", passed=True, grounded_in="rxnav",
+                         detail=f"{drug_text!r} is not in our local reference, but {why}")
         return Check(name="drug_reference", passed=False, grounded_in="local",
-                     detail=f"{drug_text!r} is not in the drug reference; cannot verify it")
+                     detail=f"{drug_text!r} is not in the drug reference; cannot verify it ({why})")
     brand = f" (brand {drug_text} = {c})" if c != drug_text.lower().strip() else ""
     return Check(name="drug_reference", passed=True, grounded_in=_source(c, f"DRUG {c}"),
                  detail=f"{c} found in drug reference{brand}")

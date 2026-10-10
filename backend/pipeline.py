@@ -29,6 +29,31 @@ PICK_FIELDS = (FieldName.drug, FieldName.strength, FieldName.dosage_form)
 OCR_TEXT: dict[str, str] = {}      # order id -> page OCR text, for re-scoring after a pharmacist edit
 PAGE_IMAGES: dict[str, Image.Image] = {}   # order id -> cleaned page the readers saw (for the UI boxes)
 DROPPABLE = {FaxType.cover_sheet, FaxType.other}
+MIN_SIDE = 1000                      # px: below this, handwriting can't be verified (H6)
+_SEEN_HASHES: list[tuple[int, str]] = []      # (page perceptual hash, order id) for resend detection (H7)
+_SEEN_KEYS: dict[str, str] = {}               # patient|dob|drug|strength|date -> order id
+
+
+def clear() -> None:
+    """Forget everything held in memory (judge uploads, duplicates). H9."""
+    OCR_TEXT.clear(); PAGE_IMAGES.clear(); _SEEN_HASHES.clear(); _SEEN_KEYS.clear()
+
+
+def _ahash(img: Image.Image) -> int:
+    small = img.convert("L").resize((16, 16), Image.Resampling.LANCZOS)
+    px = list(small.getdata())
+    mean = sum(px) / len(px)
+    return sum(1 << i for i, v in enumerate(px) if v > mean)
+
+
+def _dup_key(order: Order) -> str | None:
+    parts = [scoring.normalize(f, order.fields[f].value) if f in order.fields else None
+             for f in (FieldName.patient_name, FieldName.dob, FieldName.drug, FieldName.strength, FieldName.date_written)]
+    return "|".join(parts) if all(parts) else None
+
+
+def _hash_match(h: int) -> str | None:
+    return next((oid for ph, oid in _SEEN_HASHES if bin(ph ^ h).count("1") <= 12), None)
 
 
 def run(fax_path: Path) -> Order:
@@ -36,7 +61,8 @@ def run(fax_path: Path) -> Order:
     return run_fax(fax_path)[0]
 
 
-def run_fax(fax_path: Path) -> list[Order]:
+def run_fax(fax_path: Path, dedupe: bool = False) -> list[Order]:
+    """dedupe=True (uploads): flag a resend of an earlier fax. Sample re-runs leave it off."""
     fax_id = f"FAX-{uuid.uuid4().hex[:8]}"
     notes: list[str] = []
     try:
@@ -48,6 +74,16 @@ def run_fax(fax_path: Path) -> list[Order]:
         o = _new_order(fax_id, fax_path, 1)
         _audit(o, "ingest", "error", str(e))
         o.pick_ticket = PickTicket(status=PickStatus.blocked, warnings=["fax could not be opened"])
+        return [o]
+
+    small = [p for p in pages if max(p.image.size) < MIN_SIDE]
+    if small:                                          # H6: too small to verify handwriting; don't guess
+        o = _new_order(fax_id, fax_path, small[0].number)
+        w, h = small[0].image.size
+        _audit(o, "ingest", "too_small", f"resolution too low to verify ({w}x{h} px; need >= {MIN_SIDE} px on the long side)")
+        for f in FieldName:
+            o.fields[f] = ExtractedField(name=f, reasons=["resolution too low to verify; ask for a re-send"])
+        o.pick_ticket = PickTicket(status=PickStatus.blocked, warnings=["resolution too low to verify; ask for a re-send"])
         return [o]
 
     # 1. OCR every page, then guard EVERY page before any model sees any of it
@@ -90,7 +126,20 @@ def run_fax(fax_path: Path) -> list[Order]:
         if kind == FaxType.other:
             filed.append(f"page {p.number}")
             continue
-        orders += _orders_for_page(fax_id, fax_path, p, kind, text, ocr_fields, rs, ocr_err)
+        if not _has_content(rs):                   # H6: readers found nothing at all -> blank / noise
+            notes.append(f"page {p.number}: no readable content (both readers returned nothing)")
+            filed.append(f"page {p.number}")
+            continue
+        page_hash = _ahash(p.image)
+        dup_of = _hash_match(page_hash) if dedupe else None
+        new_orders = _orders_for_page(fax_id, fax_path, p, kind, text, ocr_fields, rs, ocr_err, dup_of, dedupe)
+        if dedupe and not any(a.actor == "duplicate" for o in new_orders for a in o.audit):
+            _SEEN_HASHES.append((page_hash, new_orders[0].id))
+            for o in new_orders:
+                k = _dup_key(o)
+                if k:
+                    _SEEN_KEYS.setdefault(k, o.id)
+        orders += new_orders
 
     if not orders:
         o = _new_order(fax_id, fax_path, 1)
@@ -108,14 +157,27 @@ def run_fax(fax_path: Path) -> list[Order]:
     return orders
 
 
+def _has_content(readers: list) -> bool:
+    """False only when every reader answered and none found a single value: blank page / noise."""
+    for r in readers:
+        if r.error:
+            return True                                 # can't tell: let it through to the pharmacist
+        if any(x and x.value for x in r.shared.values()) or r.meds:
+            return True
+    return not readers
+
+
 def _page_type(ocr_text: str, readers: list) -> tuple[FaxType, str]:
     """Keyword vote + both readers. A page is only skipped/filed if ALL of them agree;
     any disagreement -> treat as a prescription so the pharmacist sees it."""
     kw, _ = ingest.classify(ocr_text)
     votes = {FaxType(r.page_type) for r in readers if r.page_type}
     n_readers = sum(1 for r in readers if r.page_type)
+    n_words = len(ocr_text.split())
     if kw in DROPPABLE and votes == {kw} and n_readers == 2:
         return kw, "keywords and both readers agree"
+    if n_words < 5 and n_readers == 2 and len(votes) == 1 and votes <= DROPPABLE:
+        return next(iter(votes)), f"almost no text on the page ({n_words} words) and both readers agree"
     if len(votes) == 1 and n_readers == 2 and not (votes & DROPPABLE):
         return next(iter(votes)), f"both readers agree (keywords said {kw.value})"
     if kw not in DROPPABLE and not votes - {kw}:
@@ -153,7 +215,8 @@ def _match_meds(rs: list) -> list[list[tuple[str, dict]]]:
     return groups
 
 
-def _orders_for_page(fax_id, fax_path, page, kind, ocr_text, ocr_fields, rs, ocr_err) -> list[Order]:
+def _orders_for_page(fax_id, fax_path, page, kind, ocr_text, ocr_fields, rs, ocr_err,
+                     dup_of: str | None = None, dedupe: bool = False) -> list[Order]:
     groups = _match_meds(rs) or [[]]
     # label-parsed OCR fields only make sense on a single-drug Rx pad; elsewhere OCR grounds via full text
     use_ocr_fields = kind == FaxType.new_rx and len(groups) == 1 and any(
@@ -181,7 +244,8 @@ def _orders_for_page(fax_id, fax_path, page, kind, ocr_text, ocr_fields, rs, ocr
             o.fields[f] = ef
         if len(groups) > 1:
             _audit(o, "split", "medication", f"medication {gi + 1} of {len(groups)} on page {page.number}")
-        _finish(o, ocr_text, [ocr_err] if ocr_err else [], refill=rs if kind == FaxType.refill_authorization else None)
+        _finish(o, ocr_text, [ocr_err] if ocr_err else [], refill=rs if kind == FaxType.refill_authorization else None,
+                dup_of=dup_of, dedupe=dedupe)
         orders.append(o)
     return orders
 
@@ -203,8 +267,9 @@ def _refill(o: Order, rs: list) -> None:
         _audit(o, "refill", "unclear", f"readers saw {answers}")
 
 
-def _finish(order: Order, ocr_text: str, failures: list[str], refill: list | None = None) -> Order:
-    """verify -> score -> (refill answer) -> inventory -> safety gate for one order."""
+def _finish(order: Order, ocr_text: str, failures: list[str], refill: list | None = None,
+            dup_of: str | None = None, dedupe: bool = False) -> Order:
+    """verify -> score -> (refill answer) -> duplicate check -> inventory -> safety gate for one order."""
     try:
         from backend import verify
         with tracing.step("verify", order.id, input_obj=_values(order)) as t:
@@ -230,8 +295,25 @@ def _finish(order: Order, ocr_text: str, failures: list[str], refill: list | Non
             order.status = OrderStatus.needs_pharmacist
         for fl in failures:
             _audit(order, "pipeline", "fail_closed", fl)
-    order.pick_ticket = (PickTicket(status=PickStatus.blocked, warnings=["refill denied by prescriber"])
-                         if order.status == OrderStatus.denied_by_prescriber else pick_ticket(order))
+    if dedupe and not dup_of:
+        k = _dup_key(order)
+        dup_of = _SEEN_KEYS.get(k) if k else None
+    if dup_of:                                     # H7: a resend must not be filled twice
+        msg = f"possible duplicate of {dup_of} (same fax, or same patient/drug/strength/date already received)"
+        ef = order.fields[FieldName.patient_name]
+        if ef.status in (Status.verified, Status.confirmed):
+            ef.status = Status.review
+        ef.reasons.insert(0, msg)
+        if order.status == OrderStatus.ready_to_fill:
+            order.status = OrderStatus.needs_pharmacist
+        _audit(order, "duplicate", "flagged", msg)
+    if order.status == OrderStatus.denied_by_prescriber:
+        order.pick_ticket = PickTicket(status=PickStatus.blocked, warnings=["refill denied by prescriber"])
+    elif dup_of:
+        order.pick_ticket = PickTicket(status=PickStatus.blocked,
+                                       warnings=[f"possible duplicate of {dup_of}; pharmacist must confirm it is a new order"])
+    else:
+        order.pick_ticket = pick_ticket(order)
     safety.gate(order)                             # L6: re-assert invariants
     if callback.draft(order):
         _audit(order, "callback", "drafted", "callback to prescriber drafted for red fields")

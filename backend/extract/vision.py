@@ -140,7 +140,7 @@ def encode(img: Image.Image) -> str:
     return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
 
 
-def chat(model: str, content, system: str | None = None, timeout: float = 90) -> str:
+def chat(model: str, content, system: str | None = None, timeout: float = 45) -> str:
     """One Nicrron chat call; returns the message text.
     Sends temperature=0 for determinism, but some models reject the parameter
     (e.g. anthropic/claude-sonnet-5: "temperature is deprecated"), so on such an

@@ -62,8 +62,12 @@ def run_all(order: Order, ocr_text: str = "") -> None:
             drug = resolved.pop()
             note(F.drug, f"evidence only: every reading is consistent with {drug}")
     if val[F.drug] and "?" not in val[F.drug] and not cands:
-        add(F.drug, rxnorm.drug_exists(val[F.drug]))
+        add(F.drug, rxnorm.drug_exists(val[F.drug], val[F.strength]))
         add(F.drug, rules.controlled_schedule(val[F.drug]))
+        if drug is None and fx[F.drug].checks and fx[F.drug].checks[0].grounded_in == "rxnav":   # known only to RxNav
+            for f in (F.strength, F.dosage_form):
+                note(f, "unverified: " + val[F.drug] + " is not in our reference; RxNav confirms the product exists "
+                        "but no grounded maximum daily dose or form list is available; pharmacist to check")
 
     # --- strength / form / dose: only meaningful once the drug is identified ---
     if drug:
@@ -80,6 +84,15 @@ def run_all(order: Order, ocr_text: str = "") -> None:
     else:
         for f in (F.strength, F.dosage_form):
             note(f, "unverified: cannot check against the drug reference until the drug is identified")
+
+    # --- sig shorthand: shown next to the raw sig, never replaces it ---
+    if val[F.sig]:
+        from backend.verify import sig as sigmod
+        parsed = sigmod.parse(val[F.sig])
+        if parsed:
+            note(F.sig, "evidence only: reads as \"" + parsed["human_readable"] + "\"")
+        else:
+            note(F.sig, "unverified: directions could not be parsed into a daily dose; pharmacist to confirm")
 
     # --- quantity / days / dates / refills ---
     if val[F.quantity]:

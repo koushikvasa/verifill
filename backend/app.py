@@ -8,9 +8,9 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, UploadFile
+from fastapi import FastAPI, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
 from pydantic import BaseModel, Field
 
 from backend import config, pipeline
@@ -62,11 +62,54 @@ def _sample_path(fax_id: str) -> Path:
     return hits[0]
 
 
+ALLOWED = {".png", ".jpg", ".jpeg", ".webp", ".pdf", ".tif", ".tiff", ".bmp", ".gif"}
+MAX_UPLOAD = 25 * 1024 * 1024
+
+
 def _save_upload(file: UploadFile) -> Path:
-    tmp = Path(tempfile.mkdtemp()) / Path(file.filename or "fax.png").name
+    name = Path(file.filename or "fax.png").name
+    if Path(name).suffix.lower() not in ALLOWED:
+        raise HTTPException(400, f"unsupported file type {Path(name).suffix!r}; send PNG, JPG, WEBP, TIFF or PDF")
+    tmp = Path(tempfile.mkdtemp()) / name
+    size = 0
     with tmp.open("wb") as f:
-        shutil.copyfileobj(file.file, f)
+        while chunk := file.file.read(1 << 20):
+            size += len(chunk)
+            if size > MAX_UPLOAD:
+                f.close()
+                shutil.rmtree(tmp.parent, ignore_errors=True)
+                raise HTTPException(400, "file larger than 25 MB")
+            f.write(chunk)
     return tmp
+
+
+def _run_upload(path: Path) -> list[Order]:
+    """Uploads live only in a temp dir for the duration of the run, then are deleted (H9).
+    Images never go to PRISM: traces carry text fields only."""
+    try:
+        orders = pipeline.run_fax(path, dedupe=True)
+    finally:
+        shutil.rmtree(path.parent, ignore_errors=True)
+    for o in orders:
+        ORDERS[o.id] = o
+    return orders
+
+
+@app.exception_handler(Exception)
+async def _unhandled(request: Request, exc: Exception):
+    """Last resort (H1): never a bare stack trace; say what failed and that nothing was filled."""
+    return JSONResponse(status_code=500, content={
+        "detail": f"Verifill couldn't process this request: {type(exc).__name__}: {str(exc)[:200]}. Nothing was filled.",
+        "status": "needs_pharmacist"})
+
+
+@app.post("/orders/clear")
+def clear_orders():
+    """Forget every order, image and duplicate record held in memory (judge uploads, H9)."""
+    n = len(ORDERS)
+    ORDERS.clear()
+    pipeline.clear()
+    return {"cleared": n}
 
 
 @app.post("/faxes/sample/{fax_id}", response_model=list[Order])
@@ -77,7 +120,7 @@ def fax_from_sample(fax_id: str):
 
 @app.post("/faxes/upload", response_model=list[Order])
 def fax_from_upload(file: UploadFile):
-    return _run_fax(_save_upload(file))
+    return _run_upload(_save_upload(file))
 
 
 @app.post("/orders/sample/{fax_id}", response_model=Order)
@@ -88,7 +131,7 @@ def order_from_sample(fax_id: str):
 
 @app.post("/orders/upload", response_model=Order)
 def order_from_upload(file: UploadFile):
-    return _run_fax(_save_upload(file))[0]
+    return _run_upload(_save_upload(file))[0]
 
 
 @app.get("/orders/{order_id}/page.png")

@@ -27,18 +27,11 @@ WORDS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven"
 
 
 def per_day(sig: str | None) -> tuple[float, float] | None:
-    """'1 tab PO BID' -> (1 tab/dose, 2 doses/day). PRN uses its max frequency. None if unclear."""
-    if not sig:
-        return None
-    s = sig.lower()
-    m = re.match(r"\s*(?:take\s+)?(\d+(?:\.\d+)?|one|two|half|½)\s*(?:tabs?|tablets?|caps?|capsules?)\b", s)
-    if not m:
-        return None
-    tabs = {"one": 1, "two": 2, "half": 0.5, "½": 0.5}.get(m.group(1)) or float(m.group(1))
-    for pat, n in FREQ:
-        if re.search(pat, s):
-            return tabs, n
-    return None
+    """'1 tab PO BID' / 'ii po bid' -> (tabs per dose, doses per day). PRN uses its max frequency.
+    None if unclear (then qty/dose rules don't run and the field stays amber)."""
+    from backend.verify import sig as sigmod
+    d = sigmod.parse(sig)
+    return (d["tabs_per_dose"], d["doses_per_day"]) if d else None
 
 
 def number(text: str | None) -> int | None:

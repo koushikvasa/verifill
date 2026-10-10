@@ -31,7 +31,7 @@ EXACT = {FieldName.dob, FieldName.date_written, FieldName.drug, FieldName.streng
          FieldName.npi}
 KEEP_PREFIXES = ("reader ", "unverified: ", "evidence only: ", "suggestion: ", "pharmacist override")
 GROUND_RATIO = 80        # OCR is noisy on handwriting: ~80% character similarity counts as "seen"
-_WORD_NUMS = r"\((?:[a-z -]+)\)"   # "(thirty)" spelled-out quantity
+_WORD_NUMS = r"\([^)]*\)"          # "(thirty)", "(10)", "(10 days)": parentheticals on count fields
 
 
 def normalize(field: FieldName, v: str | None) -> str | None:
@@ -186,7 +186,16 @@ def _grounded(field: FieldName, key: str, ocr_n: str | None, ocr_text: str) -> b
                                   for d in _DATE.findall(hay))
     if field in (FieldName.quantity, FieldName.days_supply, FieldName.refills):
         nums = _NUM.findall(key)
-        return bool(nums) and nums[0] in set(_NUM.findall(hay.replace("#", " ")))
+        if not nums:
+            return False
+        n = re.escape(nums[0])
+        if ocr_n and re.search(rf"(?<![\d.]){n}(?![\d.])", ocr_n):
+            return True                                  # the label-parsed OCR field holds the number
+        label = {FieldName.quantity: r"(?:qty|quantity|disp(?:ense)?|#)",
+                 FieldName.days_supply: r"(?:days?\s*supply|supply|days?|for)",
+                 FieldName.refills: r"(?:refills?(?:\s*remaining)?|rf)"}[field]
+        # a lone "1" or "30" appears on almost every page: it only counts right after its label
+        return bool(re.search(rf"{label}\s*[:#.=-]?\s*#?\s*{n}(?![\d.])", hay))
     if field == FieldName.drug:
         from backend.verify.lasa import partners
         words = re.findall(r"[a-z][a-z-]{2,}", hay)
