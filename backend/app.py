@@ -140,8 +140,16 @@ class Scan(BaseModel):
 
 @app.post("/orders/{order_id}/scan")
 def scan(order_id: str, body: Scan):
-    """TODO: compare scanned NDC to pick_ticket.item.ndc; mismatch -> loud warning."""
-    raise HTTPException(501, "not implemented yet")
+    """Bench scan: the bottle's NDC must equal the pick ticket's. Mismatch -> {match: false} with a loud detail."""
+    if order_id not in ORDERS:
+        raise HTTPException(404)
+    from backend import inventory
+    from backend.models import AuditEvent
+    order = ORDERS[order_id]
+    match, detail = inventory.scan_confirm(order, body.ndc)
+    order.audit.append(AuditEvent(actor="bench", action="scan_ok" if match else "scan_mismatch",
+                                  detail=f"scanned NDC {body.ndc}: {detail}"[:500]))
+    return {"match": match, "detail": detail}
 
 
 def _run_fax(path: Path) -> list[Order]:
