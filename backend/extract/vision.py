@@ -130,6 +130,7 @@ class ReaderOutput:
     refill_note: str | None = None
     error: str | None = None                     # why this reader is missing, if it is
     flags: list[str] = field(default_factory=list)   # output-guardrail hits
+    notes: list[str] = field(default_factory=list)   # things worth an audit line, not a block
     attempts: int = 0
 
 
@@ -173,13 +174,16 @@ _BOILERPLATE = re.compile(r"confidential|intended only for|received (this )?in e
                           r"notify the sender|protected health information", re.I)
 
 
-def _output_flags(parsed: _ReaderJSON, label: str) -> list[str]:
+def _output_flags(parsed: _ReaderJSON, label: str, notes: list[str] | None = None) -> list[str]:
     flags = []
+    notes = notes if notes is not None else []
+    # The model reads text OCR can't (faint, tiny), but the deterministic patterns decide:
+    # "Please fill for pt today" on a cover sheet is a human note, not an injection.
     sus = parsed.suspicious_text
-    if sus and _BOILERPLATE.search(sus) and not guard.local_check(sus):
-        sus = None
-    if sus:
+    if sus and guard.local_check(sus):
         flags.append(f"{label} saw instruction-like text in the fax: {sus[:120]!r}")
+    elif sus and not _BOILERPLATE.search(sus):
+        notes.append(f"{label} noted free text on the page (not treated as an injection): {sus[:120]!r}")
     values = [(k.value, getattr(parsed, k.value).value) for k in SHARED]
     values += [(f"med{i + 1}.{k.value}", getattr(m, k.value).value) for i, m in enumerate(parsed.medications) for k in MED]
     values += [("refill_note", parsed.refill_note)]
@@ -211,7 +215,7 @@ def read_reader(image_url: str, model: str, label: str, session_id: str = "adhoc
             except httpx.HTTPError as e:
                 last_err = f"API error: {str(e)[:160]}"
                 continue
-            out.flags = _output_flags(parsed, label)
+            out.flags = _output_flags(parsed, label, out.notes)
             rd = lambda cell: Reading(source=f"{label}:{model}", value=cell.value,
                                       confidence=0.9 if cell.legible else 0.3)
             out.shared = {f: rd(getattr(parsed, f.value)) for f in SHARED}

@@ -39,15 +39,14 @@ def clear() -> None:
     OCR_TEXT.clear(); PAGE_IMAGES.clear(); _SEEN_HASHES.clear(); _SEEN_KEYS.clear()
 
 
-HASH_BITS_MAX = 6    # 32x32 average hash: a re-scan of the same sheet differs by ~0-4 bits,
-                     # a different Rx on the same printed pad by 18+ (measured on samples/robustness)
+HASH_BITS_MAX = 16   # 64x64 ink-density hash: a re-scan of the same sheet differs by ~0-10 cells,
+                     # a different Rx on the same printed pad by 45+ (measured on samples/robustness)
 
 
 def _ahash(img: Image.Image) -> int:
-    small = img.convert("L").resize((32, 32), Image.Resampling.LANCZOS)
-    px = list(small.getdata())
-    mean = sum(px) / len(px)
-    return sum(1 << i for i, v in enumerate(px) if v > mean)
+    """Which cells of a 64x64 grid contain ink. Sensitive to handwriting, not to the printed pad."""
+    ink = img.convert("L").point(lambda v: 0 if v < 128 else 255).resize((64, 64), Image.Resampling.BOX)
+    return sum(1 << i for i, v in enumerate(ink.getdata()) if v < 235)
 
 
 def _dup_key(order: Order) -> str | None:
@@ -232,6 +231,8 @@ def _orders_for_page(fax_id, fax_path, page, kind, ocr_text, ocr_fields, rs, ocr
         OCR_TEXT[o.id], PAGE_IMAGES[o.id] = ocr_text, page.image
         for r in rs:
             _audit(o, r.label, "read", f"{r.model}: " + (r.error or f"ok, {len(r.meds)} medication(s)"))
+            for n in getattr(r, "notes", []):
+                _audit(o, r.label, "note", n)
         found_by = {label for label, _ in group}
         for f in FieldName:
             ef = ExtractedField(name=f)
