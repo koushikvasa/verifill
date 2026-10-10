@@ -222,8 +222,12 @@ def _orders_for_page(fax_id, fax_path, page, kind, ocr_text, ocr_fields, rs, ocr
                      dup_of: str | None = None, dedupe: bool = False) -> list[Order]:
     groups = _match_meds(rs) or [[]]
     # label-parsed OCR fields only make sense on a single-drug Rx pad; elsewhere OCR grounds via full text
-    use_ocr_fields = kind == FaxType.new_rx and len(groups) == 1 and any(
-        ocr_fields.get(f) and ocr_fields[f].value for f in (FieldName.sig, FieldName.quantity))
+    single = kind == FaxType.new_rx and len(groups) == 1
+    use_ocr_fields = single and any(ocr_fields.get(f) and ocr_fields[f].value for f in (FieldName.sig, FieldName.quantity))
+    # label parse found no sig/qty: the layout is untrusted, so keep only the boxes (for zoom), not the values
+    if single and not use_ocr_fields:
+        ocr_fields = {f: (r.model_copy(update={"value": None, "confidence": 0.0}) if r else None) for f, r in ocr_fields.items()}
+        use_ocr_fields = True
     orders = []
     for gi, group in enumerate(groups):
         o = _new_order(fax_id, fax_path, page.number)
@@ -285,6 +289,24 @@ def _finish(order: Order, ocr_text: str, failures: list[str], refill: list | Non
         _audit(order, "verify", "error", str(e))
     if refill is not None:
         _refill(order, refill)
+
+    # A8: zoom-and-reread fields that aren't green yet, then re-verify and re-score with the extra votes
+    page = PAGE_IMAGES.get(order.id)
+    if page is not None and order.status not in (OrderStatus.denied_by_prescriber, OrderStatus.rejected) and not failures:
+        scoring.score_order(order, ocr_text)
+        if order.status != OrderStatus.ready_to_fill and any(
+                ef.status in (Status.review, Status.conflict) for ef in order.fields.values()):
+            try:
+                from backend.extract import zoom
+                from backend import verify
+                extra = zoom.reread(order, page)
+                if extra:
+                    ocr_text = f"{ocr_text}\n{extra}"
+                    OCR_TEXT[order.id] = ocr_text
+                verify.reset(order)
+                verify.run_all(order, ocr_text)
+            except Exception as e:  # noqa: BLE001  zoom is best effort; never blocks, never unblocks
+                _audit(order, "zoom", "error", str(e))
 
     with tracing.step("score", order.id, input_obj=_values(order)) as t:
         if order.status != OrderStatus.denied_by_prescriber:

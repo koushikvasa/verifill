@@ -117,6 +117,17 @@ def run_all(order: Order, ocr_text: str = "") -> None:
     # --- prescriber ---
     _prescriber(order, pre, val, add, note)
 
+    # --- DEA number, controlled substances only (A9) ---
+    sched = rxnorm.DRUGS["drugs"].get(rxnorm.canonical(drug) or "", {}).get("schedule") if drug else None
+    if sched:
+        from backend.verify import dea
+        found = dea.find(ocr_text)
+        if found:
+            for d in dict.fromkeys(found):
+                add(F.npi, dea.validate(d, val[F.prescriber_name]))
+        else:
+            add(F.npi, dea.missing())
+
 
 def _prescriber(order, pre, val, add, note) -> None:
     fx = order.fields

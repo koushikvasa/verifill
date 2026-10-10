@@ -93,7 +93,7 @@ def score_field(f: ExtractedField, ocr_text: str = "") -> ExtractedField:
     # keep notes from earlier stages: reader errors, verify notes ("unverified: " caps at amber)
     reasons: list[str] = [r for r in f.reasons if r.startswith(KEEP_PREFIXES)]
     ocr = next((r for r in f.readings if r.source == "ocr"), None)
-    llm = [r for r in f.readings if r.source != "ocr"]
+    llm = _per_reader(f.readings)
     llm_read = [r for r in llm if r.value is not None]
     ocr_n = normalize(f.name, ocr.value) if ocr and ocr.value else None
 
@@ -165,6 +165,25 @@ _NUM = re.compile(r"(?<![\d.])\d+(?:\.\d+)?(?![\d.])")
 _DATE = re.compile(r"\b(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})\b")
 
 
+def _per_reader(readings: list) -> list:
+    """One vote per vision reader. Sources: 'reader_a:<model>' (page) and 'zoom:reader_a:<model>' (crop).
+    The zoom reading wins only when it is more legible (a value where the page read had none or a '?')."""
+    best: dict[str, object] = {}
+    for r in readings:
+        if r.source == "ocr" or r.source.startswith("pharmacist:"):
+            continue
+        parts = r.source.split(":")
+        label, is_zoom = (parts[1], True) if parts[0] == "zoom" else (parts[0], False)
+        cur = best.get(label)
+        if cur is None:
+            best[label] = r
+        elif is_zoom and r.value and ((cur.value or "") == "" or "?" in (cur.value or "")):
+            best[label] = r
+        elif not is_zoom and (cur.source.startswith("zoom") and not (r.value is None or "?" in (r.value or ""))):
+            best[label] = r                     # page reading was fine; keep it
+    return [best[k] for k in sorted(best)]
+
+
 def _grounded(field: FieldName, key: str, ocr_n: str | None, ocr_text: str) -> bool:
     """Strict pixel grounding: a near-miss of a dangerous value must NOT count as seen.
     - strength: the exact number + unit appears ('0.5 mg' is not confirmed by '0.05 mg' or '5 mg')
@@ -213,8 +232,9 @@ def _grounded(field: FieldName, key: str, ocr_n: str | None, ocr_text: str) -> b
 
 
 def _who(source: str) -> str:
-    label = source.split(":")[0]
-    return {"ocr": "OCR", "reader_a": "reader A", "reader_b": "reader B"}.get(label, label)
+    parts = source.split(":")
+    label, zoom = (parts[1], " (zoomed)") if parts[0] == "zoom" else (parts[0], "")
+    return {"ocr": "OCR", "reader_a": "reader A", "reader_b": "reader B"}.get(label, label) + zoom
 
 
 def score_order(order: Order, ocr_text: str = "") -> Order:
