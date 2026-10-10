@@ -1,0 +1,34 @@
+{
+  "_note": "Demo pharmacy inventory. NDCs are fictional placeholders (99xxx labelers); swap in real NDCs from openFDA or RxNav if you want. Today = 2026-10-10. Built so every fax hits a different inventory path.",
+  "items": [
+    {"id": 1,  "ndc": "99101-0110-30", "drug": "lisinopril",   "strength": "10 mg",  "dosage_form": "tablet", "brand": null, "is_generic": true,  "manufacturer": "Northwind Generics", "lot": "LS2408A", "expiry": "2027-08-31", "qty_on_hand": 450, "aisle": "3", "shelf": "B", "bin": "12"},
+    {"id": 2,  "ndc": "99101-0120-30", "drug": "lisinopril",   "strength": "20 mg",  "dosage_form": "tablet", "brand": null, "is_generic": true,  "manufacturer": "Northwind Generics", "lot": "LS2411C", "expiry": "2027-11-30", "qty_on_hand": 300, "aisle": "3", "shelf": "B", "bin": "13"},
+    {"id": 3,  "ndc": "99102-0500-60", "drug": "metformin",    "strength": "500 mg", "dosage_form": "tablet", "brand": null, "is_generic": true,  "manufacturer": "Contoso Pharma",     "lot": "MF2502K", "expiry": "2027-02-28", "qty_on_hand": 40,  "aisle": "4", "shelf": "A", "bin": "02"},
+    {"id": 4,  "ndc": "99102-1000-60", "drug": "metformin",    "strength": "1000 mg","dosage_form": "tablet", "brand": null, "is_generic": true,  "manufacturer": "Contoso Pharma",     "lot": "MF2505B", "expiry": "2027-05-31", "qty_on_hand": 220, "aisle": "4", "shelf": "A", "bin": "03"},
+    {"id": 5,  "ndc": "99103-0025-01", "drug": "hydroxyzine",  "strength": "25 mg",  "dosage_form": "tablet", "brand": null, "is_generic": true,  "manufacturer": "Fabrikam Labs",      "lot": "HX2404D", "expiry": "2027-04-30", "qty_on_hand": 180, "aisle": "2", "shelf": "C", "bin": "07"},
+    {"id": 6,  "ndc": "99104-0025-01", "drug": "hydralazine",  "strength": "25 mg",  "dosage_form": "tablet", "brand": null, "is_generic": true,  "manufacturer": "Fabrikam Labs",      "lot": "HZ2406A", "expiry": "2027-06-30", "qty_on_hand": 160, "aisle": "2", "shelf": "C", "bin": "08"},
+    {"id": 7,  "ndc": "99105-0050-90", "drug": "levothyroxine","strength": "0.05 mg","dosage_form": "tablet", "brand": null, "is_generic": true,  "manufacturer": "Tailspin Rx",        "lot": "LV2503F", "expiry": "2027-03-31", "qty_on_hand": 270, "aisle": "5", "shelf": "D", "bin": "01"},
+    {"id": 8,  "ndc": "99105-0100-90", "drug": "levothyroxine","strength": "0.1 mg", "dosage_form": "tablet", "brand": null, "is_generic": true,  "manufacturer": "Tailspin Rx",        "lot": "LV2503G", "expiry": "2027-03-31", "qty_on_hand": 240, "aisle": "5", "shelf": "D", "bin": "02"},
+    {"id": 9,  "ndc": "99106-0010-90", "drug": "amlodipine",   "strength": "10 mg",  "dosage_form": "tablet", "brand": null, "is_generic": true,  "manufacturer": "Northwind Generics", "lot": "AM2501H", "expiry": "2027-01-31", "qty_on_hand": 120, "aisle": "1", "shelf": "A", "bin": "04"},
+    {"id": 10, "ndc": "99206-0010-30", "drug": "amlodipine",   "strength": "10 mg",  "dosage_form": "tablet", "brand": "Norvasc", "is_generic": false, "manufacturer": "Litware Brands", "lot": "NV2512A", "expiry": "2027-12-31", "qty_on_hand": 60, "aisle": "1", "shelf": "A", "bin": "05"},
+    {"id": 11, "ndc": "99107-0001-60", "drug": "clonidine",    "strength": "0.1 mg", "dosage_form": "tablet", "brand": null, "is_generic": true,  "manufacturer": "Contoso Pharma",     "lot": "CL2502C", "expiry": "2027-02-28", "qty_on_hand": 200, "aisle": "1", "shelf": "C", "bin": "10"},
+    {"id": 12, "ndc": "99108-0005-60", "drug": "clonazepam",   "strength": "0.5 mg", "dosage_form": "tablet", "brand": null, "is_generic": true,  "manufacturer": "Contoso Pharma",     "lot": "CZ2507A", "expiry": "2027-07-31", "qty_on_hand": 90,  "aisle": "CII-safe", "shelf": "1", "bin": "03"},
+    {"id": 13, "ndc": "99109-0050-30", "drug": "sertraline",   "strength": "50 mg",  "dosage_form": "tablet", "brand": null, "is_generic": true,  "manufacturer": "Fabrikam Labs",      "lot": "SR2409E", "expiry": "2026-09-30", "qty_on_hand": 30,  "aisle": "6", "shelf": "B", "bin": "09"},
+    {"id": 14, "ndc": "99209-0050-30", "drug": "sertraline",   "strength": "50 mg",  "dosage_form": "tablet", "brand": null, "is_generic": true,  "manufacturer": "Tailspin Rx",        "lot": "SR2604B", "expiry": "2027-04-30", "qty_on_hand": 0,   "aisle": "6", "shelf": "B", "bin": "10"},
+    {"id": 15, "ndc": "99309-0050-30", "drug": "sertraline",   "strength": "50 mg",  "dosage_form": "tablet", "brand": "Zoloft", "is_generic": false, "manufacturer": "Litware Brands", "lot": "ZL2603D", "expiry": "2027-03-31", "qty_on_hand": 45, "aisle": "6", "shelf": "B", "bin": "11"},
+    {"id": 16, "ndc": "99110-0005-30", "drug": "glipizide",    "strength": "5 mg",   "dosage_form": "tablet", "brand": null, "is_generic": true,  "manufacturer": "Northwind Generics", "lot": "GP2510A", "expiry": "2026-10-31", "qty_on_hand": 25,  "aisle": "4", "shelf": "C", "bin": "05"},
+    {"id": 17, "ndc": "99110-0005-31", "drug": "glipizide",    "strength": "5 mg",   "dosage_form": "tablet", "brand": null, "is_generic": true,  "manufacturer": "Northwind Generics", "lot": "GP2606C", "expiry": "2027-06-30", "qty_on_hand": 150, "aisle": "4", "shelf": "C", "bin": "05"},
+    {"id": 18, "ndc": "99111-0005-30", "drug": "glyburide",    "strength": "5 mg",   "dosage_form": "tablet", "brand": null, "is_generic": true,  "manufacturer": "Contoso Pharma",     "lot": "GB2505D", "expiry": "2027-05-31", "qty_on_hand": 100, "aisle": "4", "shelf": "C", "bin": "06"},
+    {"id": 19, "ndc": "99112-0020-30", "drug": "atorvastatin", "strength": "20 mg",  "dosage_form": "tablet", "brand": null, "is_generic": true,  "manufacturer": "Tailspin Rx",        "lot": "AT2508A", "expiry": "2027-08-31", "qty_on_hand": 300, "aisle": "1", "shelf": "D", "bin": "01"},
+    {"id": 20, "ndc": "99113-0500-20", "drug": "amoxicillin",  "strength": "500 mg", "dosage_form": "capsule","brand": null, "is_generic": true,  "manufacturer": "Fabrikam Labs",      "lot": "AX2602B", "expiry": "2027-02-28", "qty_on_hand": 500, "aisle": "7", "shelf": "A", "bin": "01"}
+  ],
+  "_paths": {
+    "RX-001 lisinopril 10": "in stock, Aisle 3 B 12",
+    "RX-002 metformin 500": "partial: 40 of 60, owe 20",
+    "RX-003 hydroxyzine/hydralazine": "BOTH in stock, so stock can't and mustn't disambiguate",
+    "RX-004 levothyroxine 0.5": "no 0.5 mg exists; 0.05 mg is in stock (pharmacist decides after callback)",
+    "RX-005 amlodipine 10, DAW": "generic in stock; DAW means dispense as written, no brand swap",
+    "RX-007 sertraline 50": "lot SR2409E EXPIRED (must skip), other generic qty 0, brand Zoloft available -> substitution needs approval",
+    "RX-008 glipizide 5": "FEFO trap: lot GP2510A expires 10/31, before a 30-day supply ends -> use GP2606C"
+  }
+}

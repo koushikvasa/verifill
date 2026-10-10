@@ -1,0 +1,9 @@
+{
+  "_note": "Fictional prescribers standing in for the NPPES NPI Registry when offline. Live mode queries npiregistry.cms.hhs.gov instead.",
+  "prescribers": {
+    "1234567893": {"name": "Dr. Maya Okafor", "credential": "MD", "specialty": "Internal Medicine", "state": "NY", "phone": "(212) 555-0142", "fax": "(212) 555-0143"},
+    "1987654328": {"name": "Dr. Daniel Reyes", "credential": "DO", "specialty": "Family Medicine", "state": "NY", "phone": "(718) 555-0198", "fax": "(718) 555-0199"},
+    "1452637899": {"name": "Dr. Priya Raman", "credential": "MD", "specialty": "Endocrinology", "state": "NJ", "phone": "(201) 555-0110", "fax": "(201) 555-0111"},
+    "1765432103": {"name": "Dr. Samuel Chen", "credential": "MD", "specialty": "Dermatology", "state": "NY", "phone": "(646) 555-0177", "fax": "(646) 555-0178"}
+  }
+}

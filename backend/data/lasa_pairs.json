@@ -1,0 +1,13 @@
+{
+  "_note": "Look-alike/sound-alike pairs drawn from the ISMP confused drug names list (subset for demo).",
+  "pairs": [
+    ["hydroxyzine", "hydralazine"],
+    ["clonidine", "clonazepam"],
+    ["glipizide", "glyburide"],
+    ["metformin", "metronidazole"],
+    ["sertraline", "cetirizine"],
+    ["lisinopril", "fosinopril"],
+    ["amlodipine", "amiloride"],
+    ["prednisone", "prednisolone"]
+  ]
+}

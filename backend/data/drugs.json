@@ -1,0 +1,24 @@
+{
+  "_note": "Offline demo reference. With VERIFILL_OFFLINE=0 the pipeline confirms names/strengths live against NLM RxNav and records the RxCUI it gets back. max_daily_mg values are conservative demo thresholds, not clinical guidance.",
+  "drugs": {
+    "lisinopril":           {"strengths_mg": [2.5, 5, 10, 20, 30, 40], "forms": ["tablet"], "max_daily_mg": 80, "class": "ACE inhibitor", "indications": ["blood pressure", "hypertension", "heart failure"]},
+    "metformin":            {"strengths_mg": [500, 850, 1000], "forms": ["tablet"], "max_daily_mg": 2550, "class": "biguanide", "indications": ["diabetes", "blood sugar"]},
+    "hydroxyzine":          {"strengths_mg": [10, 25, 50], "forms": ["tablet", "capsule"], "max_daily_mg": 400, "class": "antihistamine", "indications": ["itching", "itch", "pruritus", "anxiety", "hives"]},
+    "hydralazine":          {"strengths_mg": [10, 25, 50, 100], "forms": ["tablet"], "max_daily_mg": 300, "class": "vasodilator", "indications": ["blood pressure", "hypertension", "bp"]},
+    "levothyroxine":        {"strengths_mg": [0.025, 0.05, 0.075, 0.088, 0.1, 0.112, 0.125, 0.15, 0.175, 0.2], "forms": ["tablet"], "max_daily_mg": 0.3, "class": "thyroid hormone", "indications": ["thyroid", "hypothyroidism"]},
+    "amlodipine":           {"strengths_mg": [2.5, 5, 10], "forms": ["tablet"], "max_daily_mg": 10, "class": "calcium channel blocker", "indications": ["blood pressure", "hypertension", "angina"]},
+    "atorvastatin":         {"strengths_mg": [10, 20, 40, 80], "forms": ["tablet"], "max_daily_mg": 80, "class": "statin", "indications": ["cholesterol"]},
+    "sertraline":           {"strengths_mg": [25, 50, 100], "forms": ["tablet"], "max_daily_mg": 200, "class": "SSRI", "indications": ["depression", "anxiety", "mood"]},
+    "amoxicillin":          {"strengths_mg": [250, 500, 875], "forms": ["capsule", "tablet"], "max_daily_mg": 3000, "class": "penicillin antibiotic", "indications": ["infection"]},
+    "metoprolol tartrate":  {"strengths_mg": [25, 50, 100], "forms": ["tablet"], "max_daily_mg": 450, "class": "beta blocker", "indications": ["blood pressure", "hypertension", "heart rate"]},
+    "clonidine":            {"strengths_mg": [0.1, 0.2, 0.3], "forms": ["tablet"], "max_daily_mg": 2.4, "class": "alpha-2 agonist", "indications": ["blood pressure", "hypertension", "adhd"]},
+    "clonazepam":           {"strengths_mg": [0.5, 1, 2], "forms": ["tablet"], "max_daily_mg": 20, "class": "benzodiazepine", "indications": ["seizure", "panic"]},
+    "glipizide":            {"strengths_mg": [5, 10], "forms": ["tablet"], "max_daily_mg": 40, "class": "sulfonylurea", "indications": ["diabetes", "blood sugar"]},
+    "glyburide":            {"strengths_mg": [1.25, 2.5, 5], "forms": ["tablet"], "max_daily_mg": 20, "class": "sulfonylurea", "indications": ["diabetes", "blood sugar"]},
+    "prednisone":           {"strengths_mg": [5, 10, 20, 50], "forms": ["tablet"], "max_daily_mg": 80, "class": "corticosteroid", "indications": ["inflammation", "asthma", "flare"]}
+  },
+  "brands": {
+    "norvasc": "amlodipine", "lipitor": "atorvastatin", "zoloft": "sertraline", "synthroid": "levothyroxine",
+    "glucophage": "metformin", "zestril": "lisinopril", "klonopin": "clonazepam", "atarax": "hydroxyzine"
+  }
+}
