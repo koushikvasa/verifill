@@ -27,14 +27,16 @@ Data contract: `backend/models.py`. All lanes code against it. Don't rename fiel
 - Tracing must never crash the pipeline (`tracing.py` swallows HTTP errors).
 
 ## Sponsor tools (required by the hackathon)
-- **PRISM by Block Convey**: `backend/tracing.py`. Every stage uses `with tracing.step("<stage>", order.id, model=..., input_obj=...) as t: t["output"] = ...`. agent_name becomes `verifill-<stage>`. Guardrail + Evaluator rules are configured in the PRISM dashboard; on the HTTP path guardrails FLAG only, so our code enforces blocks. Knowledge Base holds `backend/data/*.json`; KB query-from-code API is unconfirmed, so keep the local JSON fallback and mark the check's `grounded_in`.
+- **PRISM by Block Convey**: `backend/tracing.py` wraps the official SDK (`prismtrace.PRISMtrace`). Every stage uses `with tracing.step("<stage>", order.id, model=..., input_obj=...) as t: t["output"] = ...` → `trace_llm` with agent_name `verifill-<stage>` and session_id = order id. End of each order: `tracing.submit_order(order.id, "success"|"failure")` sends the trajectory for PRISM evaluation. Grounding: `tracing.kb_search(query)` queries the project Knowledge Base (loaded by `python -m scripts.upload_kb`); fall back to `backend/data/*.json` only if it returns nothing, and set the check's `grounded_in` accordingly. Guardrail + Evaluator rules live in the PRISM dashboard; on the SDK path guardrails FLAG only, so our code enforces blocks. Host: `https://prism-api-prod.up.railway.app`.
 - **NicrronNinoo**: `extract/vision.py` calls Nicrron, assumed OpenAI-compatible `/chat/completions`. Base URL + model ids in `.env`.
 
 ## Commands
 ```bash
 source .venv/bin/activate
 uvicorn backend.app:app --reload --port 8000     # API + /docs
-python -m backend.tracing                        # PRISM handshake
+python -m backend.tracing                        # PRISM smoke test (live trace + trajectory + KB list)
+python -m prismtrace.verify                      # PRISM setup doctor
+python -m scripts.upload_kb                      # load reference data into PRISM Knowledge Base (once)
 python scripts/make_faxes.py --out samples/faxes --fonts fonts   # regenerate test faxes
 python -m scripts.eval                           # score vs ground truth
 curl -X POST localhost:8000/orders/sample/RX-003 | python -m json.tool
@@ -47,3 +49,15 @@ curl -X POST localhost:8000/orders/sample/RX-003 | python -m json.tool
 Python 3.11+, type hints, pydantic v2, small functions, no new frameworks. Keep diffs focused; this is a 4-hour build. Prefer deterministic logic over LLM calls for checks.
 
 Task list with acceptance criteria: `docs/TASKS.md`. Plan and timeline: `PLAN.md`.
+
+## PRISM tracing (do not remove)
+
+This project sends traces to PRISM. Env vars: `PRISMTRACE_API_KEY`,
+`PRISMTRACE_PROJECT_ID`, `PRISMTRACE_HOST`.
+
+Tracing is currently wired at: backend/tracing.py, backend/guard.py, backend/pipeline.py, backend/config.py, scripts/upload_kb.py
+
+**Standing rule.** Whenever you add or change an agent, chain, graph, tool,
+retriever, or any entry point that calls a model, wire it to PRISM before you
+finish. Unwired code is invisible in the dashboard. If you are unsure whether
+something is covered, assume it is not and wire it.

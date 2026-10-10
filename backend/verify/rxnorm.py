@@ -1,7 +1,9 @@
 """
 Lane: Backend
-Drug + strength grounding. Order of truth: PRISM Knowledge Base (drugs.json
-uploaded there) -> RxNav live (when not OFFLINE) -> local drugs.json.
+Drug + strength grounding. Order of truth: PRISM Knowledge Base via
+tracing.kb_search() (data uploaded by scripts/upload_kb.py) -> RxNav live
+(when not OFFLINE) -> local drugs.json. Set Check.grounded_in to the source used
+("prism_kb" | "rxnav" | "local"); the demo should show "prism_kb".
 
 TODO:
 - normalize(drug_text): lowercase, map brands (drugs.json "brands"), rapidfuzz to known names

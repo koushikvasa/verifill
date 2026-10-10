@@ -9,7 +9,7 @@ Priority: **P0** = demo breaks without it · **P1** = makes the demo win · **P2
 ## Lane A: Backend / pipeline (Koushik)
 
 ### A1 · P0 · Environment up (12:05–12:15)
-**Done when:** `GET /health` returns `"prism": true, "nicrron": true`, and `python -m backend.tracing` shows a 2xx handshake.
+**Done when:** `GET /health` returns `"prism": true, "nicrron": true`, `python -m backend.tracing` prints a trace id, and `python -m prismtrace.verify` reports live_connected.
 > Prompt: *Verify my local setup: run the server, hit /health, run the PRISM handshake, and make one test call to Nicrron with READER_A_MODEL using a tiny text prompt. Fix any config issues in backend/config.py or extract/vision.py. Don't change other files.*
 
 ### A2 · P0 · OCR field parser (12:15–12:45)
@@ -26,7 +26,7 @@ Priority: **P0** = demo breaks without it · **P1** = makes the demo win · **P2
 
 ### A5 · P0 · Verification checks (1:40–2:30)
 **Done when:** RX-004 flags the 10× levothyroxine dose; RX-006 flags NPI check digit and suggests 1987654328; RX-007 flags qty/days; RX-003 and RX-006 raise look-alike conflicts with `candidates`.
-> Prompt: *Implement `verify/rules.py`, `verify/lasa.py`, and finish `verify/rxnorm.py` and `verify/npi.py` per their docstrings. Each check returns `Check(name, passed, detail, grounded_in)`. Add `verify/__init__.py: run_all(order) -> None` that appends checks to the right fields and adds reasons. Failed check → field becomes conflict. Use local JSON now; leave a `query_kb()` hook in rxnorm.py that returns None until we know the PRISM KB API. Trace as "verify". Show me results on RX-003, RX-004, RX-006, RX-007.*
+> Prompt: *Implement `verify/rules.py`, `verify/lasa.py`, and finish `verify/rxnorm.py` and `verify/npi.py` per their docstrings. Each check returns `Check(name, passed, detail, grounded_in)`. Add `verify/__init__.py: run_all(order) -> None` that appends checks to the right fields and adds reasons. Failed check → field becomes conflict. Ground drug strengths, max doses, look-alike pairs and NPI matches with `tracing.kb_search(...)` first (set grounded_in="prism_kb"), falling back to local JSON (grounded_in="local"). Trace as "verify". Show me results on RX-003, RX-004, RX-006, RX-007.*
 
 ### A6 · P0 · Resolve endpoint (2:30–2:50)
 **Done when:** resolving RX-003's drug to "hydroxyzine" marks it `confirmed`, logs an audit event, re-runs checks and inventory, and the pick ticket unlocks.
@@ -81,7 +81,7 @@ Paste `frontend/NINOO_BUILDER_PROMPT.md` into Ninoo Builder. Export the code int
 Sign up → Settings → Billing → coupon `PROOFOFWORK` → name the project after the team → invite teammates → Settings → API Keys (custom purpose: send + read traces) → share key + project id privately.
 
 ### D2 · P0 · Knowledge Base (12:20–12:50)
-Upload `backend/data/drugs.json`, `lasa_pairs.json`, `prescribers.json`, `inventory.json`. **Ask on Discord how to query the KB from code** and report back to Lane A (hook: `verify/rxnorm.py: query_kb`).
+Run `python -m scripts.upload_kb` (uploads 48 small docs: drugs, look-alike pairs, prescribers, inventory). It ends with a test `kb_search`; screenshot the KB page in the dashboard for Devpost.
 
 ### D3 · P0 · Guardrail rules (12:50–1:10)
 Prompt Injection + PII/PHI Detection rules, action = flag, on agent `verifill-guard`. Test with RX-009 once B1 is done; screenshot the flag.

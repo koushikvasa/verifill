@@ -22,7 +22,7 @@ READER_B_MODEL = os.getenv("READER_B_MODEL", "")   # vision model, different ven
 # PRISM by Block Convey
 PRISMTRACE_API_KEY = os.getenv("PRISMTRACE_API_KEY", "")
 PRISMTRACE_PROJECT_ID = os.getenv("PRISMTRACE_PROJECT_ID", "")
-PRISMTRACE_HOST = os.getenv("PRISMTRACE_HOST", "https://prism.blockconvey.com")
+PRISMTRACE_HOST = os.getenv("PRISMTRACE_HOST", "https://prism-api-prod.up.railway.app")
 AGENT_PREFIX = os.getenv("AGENT_PREFIX", "verifill")
 
 # Public verification APIs (no keys). OFFLINE=1 uses backend/data only.

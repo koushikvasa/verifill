@@ -1,50 +1,61 @@
 """
-PRISM tracing. Every pipeline step calls `trace(...)` with its own agent_name
-so runs show up in PRISM's flow views (runs without agent_name land under
-"unknown"). session_id = order id, so one fax = one PRISM session.
+PRISM by Block Convey: tracing, Knowledge Base, trajectory evaluation.
 
-Uses the documented HTTP endpoint (POST /api/traces, X-PRISMtrace-Key header).
-If keys are missing it no-ops, so local dev never breaks.
+Uses the official SDK (prismtrace-sdk>=0.5.1, `PRISMtrace` client):
+- every pipeline stage -> pt.trace_llm(..., agent_name="verifill-<stage>", session_id=order.id)
+- end of each order    -> pt.submit_trajectory(steps, agent_name="verifill-pipeline") for PRISM evaluation
+- grounding            -> pt.kb_search(query) against the project Knowledge Base (rule 4)
 
-Note from the PRISM docs: on SDK/HTTP paths Guardrails FLAG, they don't block.
-So our code reads the flags back and enforces the block itself (see guard.py).
+Never crashes the pipeline: if keys are missing or PRISM is unreachable, calls
+no-op and the audit trail still gets a local trace id.
+
+Note: on SDK/HTTP paths PRISM Guardrails FLAG, they don't block, so guard.py
+enforces the block itself.
 """
 import json
 import time
 import uuid
 from contextlib import contextmanager
 
-import httpx
-
 from backend import config
 
-_client = httpx.Client(timeout=5.0)
+_pt = None
+_steps: dict[str, list[dict]] = {}   # session_id -> trajectory steps
 
 
 def enabled() -> bool:
     return bool(config.PRISMTRACE_API_KEY and config.PRISMTRACE_PROJECT_ID)
 
 
+def client():
+    """Lazy singleton PRISMtrace client (None if disabled or SDK missing)."""
+    global _pt
+    if _pt is None and enabled():
+        try:
+            from prismtrace import PRISMtrace
+            _pt = PRISMtrace(api_key=config.PRISMTRACE_API_KEY, host=config.PRISMTRACE_HOST,
+                             project_id=config.PRISMTRACE_PROJECT_ID, timeout=10)
+        except Exception:
+            _pt = None
+    return _pt
+
+
 def trace(step: str, session_id: str, model: str, input_obj, output_obj, latency_ms: int,
-          metadata: dict | None = None) -> str | None:
-    """Send one trace. Returns a local trace id for the audit trail."""
+          metadata: dict | None = None) -> str:
+    """Record one stage. Returns a trace id for the audit trail."""
     trace_id = str(uuid.uuid4())
-    if not enabled():
+    _steps.setdefault(session_id, []).append(
+        {"name": step, "input": _s(input_obj)[:4000], "output": _s(output_obj)[:4000], "latency_ms": latency_ms})
+    pt = client()
+    if pt is None:
         return trace_id
-    body = {
-        "project_id": config.PRISMTRACE_PROJECT_ID,
-        "agent_name": f"{config.AGENT_PREFIX}-{step}",
-        "session_id": session_id,
-        "model": model or "none",
-        "input_messages": [{"role": "user", "content": _s(input_obj)}],
-        "output_message": {"role": "assistant", "content": _s(output_obj)},
-        "latency_ms": latency_ms,
-        "metadata": {"trace_id": trace_id, **(metadata or {})},
-    }
     try:
-        _client.post(f"{config.PRISMTRACE_HOST}/api/traces", json=body,
-                     headers={"X-PRISMtrace-Key": config.PRISMTRACE_API_KEY})
-    except httpx.HTTPError:
+        pt.trace_llm(model=model or "none",
+                     input_messages=[{"role": "user", "content": _s(input_obj)}],
+                     output=_s(output_obj), latency_ms=latency_ms, trace_id=trace_id,
+                     agent_name=f"{config.AGENT_PREFIX}-{step}", session_id=session_id,
+                     metadata={"stage": step, **(metadata or {})})
+    except Exception:
         pass  # tracing must never take the pipeline down
     return trace_id
 
@@ -61,12 +72,39 @@ def step(name: str, session_id: str, model: str = "", input_obj=None):
                                 int((time.perf_counter() - t0) * 1000), box["metadata"])
 
 
-def handshake() -> dict:
-    """Check credentials via PRISM setup doctor. Run: python -m backend.tracing"""
-    r = _client.post(f"{config.PRISMTRACE_HOST}/api/setup-doctor/handshake",
-                     headers={"X-PRISMtrace-Key": config.PRISMTRACE_API_KEY},
-                     json={"project_id": config.PRISMTRACE_PROJECT_ID})
-    return {"status": r.status_code, "body": r.text[:500]}
+def submit_order(session_id: str, final_status: str) -> dict | None:
+    """Send the whole order run as one trajectory so PRISM's Evaluator scores it.
+    Call once at the end of pipeline.run(). final_status: "success" | "failure"."""
+    steps = _steps.pop(session_id, [])
+    pt = client()
+    if pt is None or not steps:
+        return None
+    try:
+        return pt.submit_trajectory(steps, agent_name=f"{config.AGENT_PREFIX}-pipeline",
+                                    conversation_id=session_id, final_status=final_status, async_send=True)
+    except Exception:
+        return None
+
+
+def kb_search(query: str, limit: int = 5) -> list[dict]:
+    """Ground a claim in the PRISM Knowledge Base. Empty list if unavailable;
+    callers fall back to backend/data and mark grounded_in="local"."""
+    pt = client()
+    if pt is None:
+        return []
+    try:
+        return pt.kb_search(query, limit=limit) or []
+    except Exception:
+        return []
+
+
+def flush():
+    pt = client()
+    if pt is not None:
+        try:
+            pt.flush()
+        except Exception:
+            pass
 
 
 def _s(obj) -> str:
@@ -79,4 +117,14 @@ def _s(obj) -> str:
 
 
 if __name__ == "__main__":
-    print(handshake() if enabled() else "Set PRISMTRACE_API_KEY and PRISMTRACE_PROJECT_ID in .env first")
+    # Live smoke test: one real trace + KB listing. Then run: python -m prismtrace.verify
+    if not enabled():
+        raise SystemExit("Set PRISMTRACE_API_KEY and PRISMTRACE_PROJECT_ID in .env first")
+    sid = f"smoke-{uuid.uuid4().hex[:6]}"
+    print("trace id:", trace("smoke", sid, "none", "verifill smoke test", {"ok": True}, 1))
+    print("trajectory:", submit_order(sid, "success"))
+    flush()
+    try:
+        print("kb documents:", [d.get("filename") for d in client().kb_list_documents()])
+    except Exception as e:
+        print("kb list failed:", e)

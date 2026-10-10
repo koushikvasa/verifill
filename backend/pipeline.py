@@ -12,7 +12,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from backend import guard
+from backend import guard, tracing
 from backend.models import AuditEvent, Order, OrderStatus
 
 
@@ -28,6 +28,7 @@ def run(fax_path: Path) -> Order:
     if order.guardrail_flags:
         order.status = OrderStatus.rejected
         order.audit.append(AuditEvent(actor="guard", action="flagged", detail="; ".join(order.guardrail_flags)))
+        tracing.submit_order(order.id, "failure")
         return order
 
     # 2. readers            -> backend/extract/ocr.py, vision.py
@@ -36,4 +37,5 @@ def run(fax_path: Path) -> Order:
     # 5. score              -> backend/scoring.py
     # 6. inventory          -> backend/inventory.py (only if drug/strength/form green)
     # 7. callback draft     -> red fields -> message to prescriber (phone from registry)
+    # 8. tracing.submit_order(order.id, "success" if ready_to_fill else "failure")  -> PRISM Evaluator
     raise NotImplementedError("stages 2-7: see TODOs in each module")
