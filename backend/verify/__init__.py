@@ -146,15 +146,21 @@ def _prescriber(order, pre, val, add, note) -> None:
         for n in notes:
             note(F.npi, n)
     elif len(npi_vals) > 1:                                  # readers disagree: evidence per reading
-        valid = []
+        valid, sugg = [], []
         for v in npi_vals:
-            checks, _, _ = npi.checks_for(v, written)
+            checks, s_, _ = npi.checks_for(v, written)
             bad = [c.detail for c in checks if not c.passed]
             if not bad:
                 valid.append(v)
+            sugg += [x for x in s_ if x not in sugg]
             note(F.npi, f"evidence only: reading {v}: " + ("; ".join(bad) if bad else
                                                           "valid, registered, name matches"))
-        fx[F.npi].candidates = valid
+        if not valid and written:                            # nothing valid: suggest from the registry by name
+            sugg += [p["npi"] for p in npi.search_by_name(written) if p.get("npi") and p["npi"] not in sugg]
+        fx[F.npi].candidates = valid or sugg[:10]
+        if not valid and sugg:
+            note(F.npi, "suggestion: " + ", ".join(sugg[:5]) + " (from check-digit transposition / registry name "
+                        "match; verify with prescriber before using)")
     elif not npi_vals:                                       # NPI missing / unreadable
         if written:
             found = npi.search_by_name(written)

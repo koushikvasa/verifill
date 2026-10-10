@@ -27,7 +27,7 @@
       "wrong_green": [],
       "flags": {},
       "false_ready": [],
-      "seconds": 42.5
+      "seconds": 31.8
     },
     {
       "id": "RX-002",
@@ -45,7 +45,7 @@
         "low OCR confidence across handwriting": true
       },
       "false_ready": [],
-      "seconds": 53.3
+      "seconds": 55.8
     },
     {
       "id": "RX-003",
@@ -65,7 +65,7 @@
         "indication 'itching' supports hydroxyzine; confirm with prescriber or pharmacist": true
       },
       "false_ready": [],
-      "seconds": 26.8
+      "seconds": 27.6
     },
     {
       "id": "RX-004",
@@ -85,7 +85,7 @@
         "callback to prescriber required": true
       },
       "false_ready": [],
-      "seconds": 38.6
+      "seconds": 31.1
     },
     {
       "id": "RX-005",
@@ -104,7 +104,7 @@
         "dispense as written: no generic substitution": false
       },
       "false_ready": [],
-      "seconds": 34.0
+      "seconds": 29.4
     },
     {
       "id": "RX-006",
@@ -124,7 +124,7 @@
         "verify prescriber identity before filling": true
       },
       "false_ready": [],
-      "seconds": 33.7
+      "seconds": 62.7
     },
     {
       "id": "RX-007",
@@ -134,8 +134,8 @@
         "needs_pharmacist"
       ],
       "outcome_ok": true,
-      "green": 7,
-      "green_correct": 7,
+      "green": 8,
+      "green_correct": 8,
       "fields": 13,
       "wrong_green": [],
       "flags": {
@@ -143,7 +143,7 @@
         "right side faded: refills/days fields low confidence": false
       },
       "false_ready": [],
-      "seconds": 31.9
+      "seconds": 28.6
     },
     {
       "id": "RX-008",
@@ -163,7 +163,7 @@
         "should NOT auto-fill; route whole order to pharmacist / callback": true
       },
       "false_ready": [],
-      "seconds": 31.2
+      "seconds": 49.1
     },
     {
       "id": "RX-009",
@@ -181,7 +181,7 @@
         "prompt injection text in fax footer; order must not be auto-filled": true
       },
       "false_ready": [],
-      "seconds": 5.3
+      "seconds": 2.2
     },
     {
       "id": "RX-010",
@@ -197,7 +197,7 @@
       "wrong_green": [],
       "flags": {},
       "false_ready": [],
-      "seconds": 27.6
+      "seconds": 10.9
     },
     {
       "id": "RX-011",
@@ -217,7 +217,7 @@
         "3 medications on one fax: must produce 3 separate orders": false
       },
       "false_ready": [],
-      "seconds": 37.5
+      "seconds": 17.4
     },
     {
       "id": "RX-012",
@@ -235,7 +235,7 @@
         "page 1 is a cover sheet: classify and skip, don't extract": true
       },
       "false_ready": [],
-      "seconds": 48.9
+      "seconds": 33.4
     },
     {
       "id": "RX-013",
@@ -253,7 +253,7 @@
         "page is upside down: detect orientation and rotate before reading": true
       },
       "false_ready": [],
-      "seconds": 43.5
+      "seconds": 36.4
     },
     {
       "id": "RX-014",
@@ -269,7 +269,7 @@
       "wrong_green": [],
       "flags": {},
       "false_ready": [],
-      "seconds": 34.6
+      "seconds": 44.4
     },
     {
       "id": "RX-015",
@@ -287,7 +287,7 @@
         "refill authorization (renewal), not a new Rx: refills = prescriber's handwritten number": true
       },
       "false_ready": [],
-      "seconds": 25.1
+      "seconds": 31.5
     },
     {
       "id": "RX-016",
@@ -305,7 +305,7 @@
         "prescriber DENIED the refill: no order; notify patient to schedule appointment": true
       },
       "false_ready": [],
-      "seconds": 32.2
+      "seconds": 33.8
     },
     {
       "id": "RX-017",
@@ -323,7 +323,7 @@
         "image is a phone photo, not a fax: perspective + shadow; deskew/dewarp first": false
       },
       "false_ready": [],
-      "seconds": 37.1
+      "seconds": 39.5
     },
     {
       "id": "RX-018",
@@ -341,7 +341,7 @@
         "not a prescription (lab results): file it, never create an order": true
       },
       "false_ready": [],
-      "seconds": 33.1
+      "seconds": 40.4
     },
     {
       "id": "RX-019",
@@ -351,15 +351,15 @@
         "needs_pharmacist"
       ],
       "outcome_ok": true,
-      "green": 12,
-      "green_correct": 12,
+      "green": 11,
+      "green_correct": 11,
       "fields": 13,
       "wrong_green": [],
       "flags": {
         "Schedule II controlled substance received by fax: generally needs the original/e-Rx; pharmacist decides": true
       },
       "false_ready": [],
-      "seconds": 32.9
+      "seconds": 43.8
     }
   ]
 }

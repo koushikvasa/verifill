@@ -61,10 +61,10 @@ Priority: **P0** = demo breaks without it · **P1** = makes the demo win · **P2
 **Done when:** RX-004 and RX-006 orders have a `callback_draft` naming the issue and the prescriber phone from the registry.
 > Prompt: *Add a deterministic callback drafter (no LLM): for each red field, one line stating what was written and what's wrong; addressed to the prescriber with their phone/fax from prescribers.json. Store in order.callback_draft.*
 
-### A8 · P2 · Zoom-and-reread (only if ahead)
+### A8 · ✅ P2 · Zoom-and-reread (only if ahead) — done 14:49
 > Prompt: *Implement `extract/zoom.py` per its docstring and call it from the pipeline for fields with confidence < OCR_GREEN. Log every attempt as an audit event and trace it as "zoom".* (Dropped 12:40.)
 
-### A9 · P2 · DEA number check for controlled drugs — SKIPPED: no DEA numbers exist in any sample fax or the registry
+### A9 · ✅ P2 · DEA number check for controlled drugs — done 14:49 (verify/dea.py; fires on controlled drugs: missing / check digit / name letter)
 **Done when:** a controlled-drug Rx with a DEA number fails if the check digit is wrong or the 2nd letter doesn't match the prescriber's last name.
 > Prompt: *Add `verify/dea.py`: for controlled drugs only, validate the DEA check digit and that the 2nd letter matches the prescriber's last-name initial. Failure → Check failed with a reason. Trace under "verify".*
 
@@ -131,9 +131,8 @@ Devpost sections: name + one-liner, track, what/why, accuracy + uncertainty, too
 
 ---
 
-## Status 14:28
-Judge kit (`python -m scripts.robustness`): 12/12 as expected, 0 crashes, 0 false ready_to_fill. H3 live lookups need `VERIFILL_OFFLINE=0`.
-Backend complete through A7 + B2/B3/B4 + Lane H. `python -m scripts.eval`: auto-accept precision 100% (175/175 green fields correct), coverage 71%, flag recall 81%, outcome accuracy 94.7% (18/19), 0 false ready_to_fill. OCR grounding = Tesseract + RapidOCR (`GROUND_OCR`). Remaining: frontend wiring (Lane C), PRISM dashboard rules (Lane D), B5 prescriber faxes RX-020..022.
+## Status 14:58
+Backend complete: A0–A9, B2–B4, H1–H9. Live RxNav/NPPES on (`VERIFILL_OFFLINE=0`). `python -m scripts.eval`: precision 100% (175/175), coverage 71%, flag recall 81%, outcomes 18/19, 0 false ready_to_fill. Judge kit 12/12. `python -m scripts.demo_check` passes. 45 offline tests.
 
 ## Integration checkpoints
 - **1:45**: RX-001 end to end returns a real Order (A4 done; landed 1:06) → frontend switches off mock data
