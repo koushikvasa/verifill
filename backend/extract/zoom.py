@@ -55,9 +55,29 @@ def _ask(model: str, label: str, url: str, field: FieldName) -> Reading | None:
         d = json.loads(text[s:e + 1])
         v = d.get("value")
         v = None if v is None else str(v).strip() or None
+        v = _only(field, v)
         return Reading(source=f"zoom:{label}:{model}", value=v, confidence=0.85 if d.get("legible") and v else 0.3)
     except Exception as e:  # noqa: BLE001  a failed zoom is just no extra vote
         return Reading(source=f"zoom:{label}:{model}", value=None, confidence=0.0)
+
+
+_STRENGTH = re.compile(r"\d+(?:\.\d+)?\s*(?:mg|mcg|g|ml|units?|%)", re.I)
+
+
+def _only(field: FieldName, v: str | None) -> str | None:
+    """A crop often shows the whole Rx line; keep only the part that belongs to the field asked."""
+    if not v:
+        return v
+    if field == FieldName.drug:
+        m = _STRENGTH.search(v)
+        return (v[: m.start()].strip(" ,") or None) if m else v
+    if field == FieldName.strength:
+        m = _STRENGTH.search(v)
+        return m.group(0) if m else v
+    if field == FieldName.npi:
+        digits = re.sub(r"[^\d?]", "", v)
+        return digits or v
+    return v
 
 
 def reread(order: Order, page: Image.Image) -> str:

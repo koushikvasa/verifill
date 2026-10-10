@@ -57,8 +57,9 @@ def run_all(order: Order, ocr_text: str = "") -> None:
     if drug is None and drug_readings and not cands:
         # readers disagree only between a partial and a full read of the SAME drug
         # ("Lev?thyro?ne" vs "Levothyroxine"): still run the dose checks against it
-        resolved = {m for r in drug_readings for m in lasa.matches(r)}
-        if len(resolved) == 1 and all(lasa.matches(r) for r in drug_readings):
+        first = lambda r: lasa.matches(r) or lasa.matches(r.split()[0])      # "Levothyroxine 0.1 mg tablet"
+        resolved = {m for r in drug_readings for m in first(r)}
+        if len(resolved) == 1 and all(first(r) for r in drug_readings):
             drug = resolved.pop()
             note(F.drug, f"evidence only: every reading is consistent with {drug}")
     if val[F.drug] and "?" not in val[F.drug] and not cands:
