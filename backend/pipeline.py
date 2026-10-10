@@ -142,7 +142,14 @@ def _match_meds(rs: list) -> list[list[tuple[str, dict]]]:
             groups.append([(la, ma), b[bi]])
         else:
             groups.append([(la, ma)])
-    groups += [[b[j]] for j in range(len(b)) if j not in used]
+    left = [j for j in range(len(b)) if j not in used]
+    if len(a) == len(b):
+        # same medication count: an unmatched pair (one reader couldn't read the name) is the SAME item
+        singles = [g for g in groups if len(g) == 1]
+        for g, j in zip(singles, left):
+            g.append(b[j])
+        left = left[len(singles):]
+    groups += [[b[j]] for j in left]
     return groups
 
 

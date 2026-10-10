@@ -40,11 +40,17 @@ python -m prismtrace.verify                      # PRISM setup doctor
 python -m scripts.upload_kb                      # load reference data into PRISM Knowledge Base (once)
 python scripts/make_faxes.py --out samples/faxes --fonts fonts   # regenerate test faxes
 python -m scripts.eval                           # score vs ground truth
-curl -X POST localhost:8000/orders/sample/RX-003 | python -m json.tool
+curl -X POST localhost:8000/faxes/sample/RX-011 | python -m json.tool   # list of orders (multi-drug)
+curl -X POST localhost:8000/orders/sample/RX-003 | python -m json.tool  # first order only
+python -m pytest tests -q                        # offline safety + inventory invariants (fast)
+$env:RUN_LIVE="1"; python -m pytest tests -k live # end-to-end over every sample (calls the models)
 ```
 
 ## Test data
 `samples/faxes/RX-001..019` (PNG, RX-012 is a 2-page PDF) + `ground_truth.json` (`orders` list per fax, expected flags, expected outcome: ready_to_fill | needs_pharmacist | rejected | not_prescription | denied_by_prescriber). `samples/README.md` explains each case. Faxes come in many kinds (typed, multi-drug, cover sheets, upside down, photos, refill responses, non-prescriptions): see `docs/FAX_VARIETY.md`; the ingest stage (`backend/ingest.py`) runs first. Regenerate the variety pack with `python scripts/make_faxes_v2.py --out samples/faxes --fonts fonts`.
+
+## Windows notes
+Norton intercepts TLS on Koushik's laptop: `config.py` injects `truststore`; pip needs `--use-feature=truststore`. Console is cp1252: set `PYTHONIOENCODING=utf-8` for scripts that print ✓.
 
 ## Style
 Python 3.11+, type hints, pydantic v2, small functions, no new frameworks. Keep diffs focused; this is a 4-hour build. Prefer deterministic logic over LLM calls for checks.

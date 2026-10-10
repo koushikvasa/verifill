@@ -204,3 +204,16 @@ def test_page_classifier_never_drops_on_disagreement():
     assert kind.value == "new_rx"
     kind, _ = pipeline._page_type("laboratory results reference range", [NS(page_type="other"), NS(page_type="other")])
     assert kind.value == "other"
+
+
+def test_single_medication_pages_never_split_when_one_reader_cannot_read_the_name():
+    from types import SimpleNamespace as NS
+    from backend import pipeline
+    med = lambda d: {F.drug: Reading(source="r", value=d, confidence=0.3)}
+    a = NS(label="reader_a", meds=[med(None)])
+    b = NS(label="reader_b", meds=[med("Glipizide")])
+    groups = pipeline._match_meds([a, b])
+    assert len(groups) == 1 and {lbl for lbl, _ in groups[0]} == {"reader_a", "reader_b"}
+    a3 = NS(label="reader_a", meds=[med("Metformin"), med(None), med("Atorvastatin")])
+    b3 = NS(label="reader_b", meds=[med("Metformin"), med("Lisinopril"), med("Atorvastatin")])
+    assert len(pipeline._match_meds([a3, b3])) == 3
