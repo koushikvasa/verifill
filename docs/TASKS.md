@@ -131,7 +131,8 @@ Devpost sections: name + one-liner, track, what/why, accuracy + uncertainty, too
 
 ---
 
-## Status 14:20
+## Status 14:28
+Judge kit (`python -m scripts.robustness`): 12/12 as expected, 0 crashes, 0 false ready_to_fill. H3 live lookups need `VERIFILL_OFFLINE=0`.
 Backend complete through A7 + B2/B3/B4 + Lane H. `python -m scripts.eval`: auto-accept precision 100% (175/175 green fields correct), coverage 71%, flag recall 81%, outcome accuracy 94.7% (18/19), 0 false ready_to_fill. OCR grounding = Tesseract + RapidOCR (`GROUND_OCR`). Remaining: frontend wiring (Lane C), PRISM dashboard rules (Lane D), B5 prescriber faxes RX-020..022.
 
 ## Integration checkpoints
@@ -146,32 +147,32 @@ Backend complete through A7 + B2/B3/B4 + Lane H. `python -m scripts.eval`: auto-
 
 Goal: **never crash, never wrongly fill, always explain.** Test kit: `samples/robustness/` (12 files + `expected.json`), made by `scripts/make_robustness.py`.
 
-### H1 · P0 · Never crash (10 min)
+### H1 · ✅ P0 · Never crash (10 min)
 > Prompt: *Make the pipeline crash-proof for unknown uploads. Wrap each stage in pipeline.run so an exception becomes an audit event + a reason, and the order ends `needs_pharmacist` ("Verifill couldn't process this part: <short error>") instead of a 500. Add a FastAPI exception handler as a last resort. Put timeouts on every network call (readers 45 s, KB/RxNav/NPPES 4 s) and treat a timeout as "reader unavailable" (amber), never as agreement. Show me a run where reader B is forced to fail.*
 
-### H2 · P0 · Accept every real fax format (10 min)
+### H2 · ✅ P0 · Accept every real fax format (10 min)
 > Prompt: *Make /faxes/upload accept .png .jpg .jpeg .webp .pdf .tif .tiff (multi-page TIFF, incl. Group-4 1-bit, iterate frames with ImageSequence). Reject anything else and files > 25 MB with a clear 400 message. Test with samples/robustness/J12_multipage_g4.tiff (Rx is on page 3 after a cover sheet and lab results).*
 
-### H3 · P0 · Real drugs and real NPIs outside our data (15 min)
+### H3 · ✅ P0 · Real drugs and real NPIs outside our data (15 min)
 Judges will write drugs we don't have (losartan, gabapentin...) and maybe real NPIs.
 > Prompt: *Turn on live verification with safe fallbacks: if a drug isn't in the KB/local data, query RxNav (approximateTerm + rxcui properties) to confirm name and strength exist (grounded_in="rxnav"); if an NPI isn't in our registry, query NPPES (grounded_in="nppes") and compare the name with rapidfuzz. Cache results in memory. If no grounded max daily dose exists → amber with reason "no grounded dose limit for <drug>; pharmacist to check", never green on dose. Set VERIFILL_OFFLINE=0 in .env. Test with samples/robustness/J05_drug_not_in_kb.png.*
 
-### H4 · P0 · Sig shorthand (10 min)
+### H4 · ✅ P0 · Sig shorthand (10 min)
 > Prompt: *Add backend/verify/sig.py: normalize prescriber shorthand before the dose/qty rules: i/ii/iii/½ → 1/2/3/0.5; po, sl, top; qd/daily, bid, tid, qid, qhs, qam, qod, q4h/q6h/q8h/q12h, prn, ud, c (with), x N days. Return {tabs_per_dose, doses_per_day, prn, days, human_readable}. Show human_readable in the UI next to the raw sig (raw stays exactly as written). Test with J01 ("i po qd") and J02 ("ii po bid c meals", qty 120 for 30 days must pass).*
 
-### H5 · P1 · Broader injection defense (10 min)
+### H5 · ✅ P1 · Broader injection defense (10 min)
 > Prompt: *Extend guard.py patterns to polite phrasings ("note to ai", "already verified", "do not flag", "mark ready", "approve automatically", "ignore ... checks"). Ask both readers to also return `text_addressed_to_ai` (any text on the page that gives instructions to software) and run guard on that too, because faint text (J07) can beat Tesseract. Test J06 and J07 → rejected.*
 
-### H6 · P1 · Junk in, nothing out (10 min)
+### H6 · ✅ P1 · Junk in, nothing out (10 min)
 > Prompt: *Before reading: if the longer side < 1000 px → needs_pharmacist "resolution too low to verify" (J11); if OCR finds < 5 words and both readers say no prescription → not_prescription (J08 blank, J09 noise). Readers must be allowed to return page_type "other" and all-null fields; never build an order from all-null fields.*
 
-### H7 · P1 · Duplicate faxes (10 min)
+### H7 · ✅ P1 · Duplicate faxes (10 min)
 > Prompt: *Detect resends: perceptual hash (average hash on a 16x16 grayscale thumbnail) of each page + a key of patient_name|dob|drug|strength|date_written. If either matches an earlier order in memory → reason "possible duplicate of <order id>" and needs_pharmacist. Test: run RX-001 then samples/robustness/J04_duplicate_of_RX-001.png.*
 
-### H8 · P0 · Run the kit (5 min, then every fix)
+### H8 · ✅ P0 · Run the kit (5 min, then every fix)
 > Prompt: *Write scripts/robustness.py: run every file in samples/robustness/ through /faxes/upload logic in order, compare to expected.json, print a table (file, expected, got, top reason, seconds), and exit non-zero if anything crashed or anything not expected to be ready_to_fill came out ready_to_fill.*
 
-### H9 · P0 · Privacy for judge uploads (5 min)
+### H9 · ✅ P0 · Privacy for judge uploads (5 min)
 > Prompt: *Make sure uploaded images are only held in memory/temp and deleted after processing, never committed or sent to PRISM (traces carry text fields, not images). Add a "Clear all orders" endpoint and button.*
 
 **If short on time:** H1 → H2 → H3 → H8 are the must-haves. H4 if judges are likely to hand-write (they are: see the blank pad below).
