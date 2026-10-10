@@ -29,6 +29,9 @@ from backend.models import CRITICAL_FIELDS, ExtractedField, FieldName, Order, Or
 EXACT = {FieldName.dob, FieldName.date_written, FieldName.drug, FieldName.strength, FieldName.dosage_form,
          FieldName.sig, FieldName.quantity, FieldName.days_supply, FieldName.refills, FieldName.daw,
          FieldName.npi}
+FORM_ALIASES = {"tab": "tablet", "tabs": "tablet", "tablet": "tablet", "cap": "capsule", "caps": "capsule",
+                "capsule": "capsule", "susp": "suspension", "soln": "solution", "sol": "solution", "inj": "injection",
+                "oint": "ointment", "cr": "cream", "supp": "suppository", "er tab": "tablet", "xr tab": "tablet"}
 KEEP_PREFIXES = ("reader ", "unverified: ", "evidence only: ", "suggestion: ", "pharmacist override")
 GROUND_RATIO = 80        # OCR is noisy on handwriting: ~80% character similarity counts as "seen"
 _WORD_NUMS = r"\([^)]*\)"          # "(thirty)", "(10)", "(10 days)": parentheticals on count fields
@@ -47,7 +50,8 @@ def normalize(field: FieldName, v: str | None) -> str | None:
         s = re.sub(_WORD_NUMS, "", s).lstrip("#").strip()
         s = re.sub(r"\s*(tabs?|tablets?|caps?|capsules?|days?)(\(s\))?$", "", s).strip()
     if field == FieldName.dosage_form:
-        s = re.sub(r"^oral\s+", "", s).rstrip("s").replace("(", "").replace(")", "")
+        s = re.sub(r"^(oral|po)\s+", "", s).replace("(", "").replace(")", "").strip()
+        s = FORM_ALIASES.get(s, FORM_ALIASES.get(s.rstrip("s"), s.rstrip("s")))
     if field == FieldName.npi:
         s = re.sub(r"\D", "", s)
     if field == FieldName.strength:

@@ -110,7 +110,9 @@ def strength_marketed(drug_text: str, strength: str) -> Check:
 def form_marketed(drug_text: str, form: str) -> Check:
     c = canonical(drug_text)
     forms = DRUGS["drugs"][c]["forms"]
-    f = re.sub(r"^oral\s+", "", form.lower().strip()).replace("(s)", "").rstrip("s")
+    from backend.scoring import normalize
+    from backend.models import FieldName
+    f = normalize(FieldName.dosage_form, form) or ""
     ok = f in forms
     return Check(name="form_marketed", passed=ok, grounded_in=_source(c, forms[0]),
                  detail=f"{form} {'is' if ok else 'is not'} an available form of {c} ({', '.join(forms)})")

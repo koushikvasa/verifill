@@ -39,8 +39,12 @@ def clear() -> None:
     OCR_TEXT.clear(); PAGE_IMAGES.clear(); _SEEN_HASHES.clear(); _SEEN_KEYS.clear()
 
 
+HASH_BITS_MAX = 6    # 32x32 average hash: a re-scan of the same sheet differs by ~0-4 bits,
+                     # a different Rx on the same printed pad by 18+ (measured on samples/robustness)
+
+
 def _ahash(img: Image.Image) -> int:
-    small = img.convert("L").resize((16, 16), Image.Resampling.LANCZOS)
+    small = img.convert("L").resize((32, 32), Image.Resampling.LANCZOS)
     px = list(small.getdata())
     mean = sum(px) / len(px)
     return sum(1 << i for i, v in enumerate(px) if v > mean)
@@ -53,7 +57,7 @@ def _dup_key(order: Order) -> str | None:
 
 
 def _hash_match(h: int) -> str | None:
-    return next((oid for ph, oid in _SEEN_HASHES if bin(ph ^ h).count("1") <= 12), None)
+    return next((oid for ph, oid in _SEEN_HASHES if bin(ph ^ h).count("1") <= HASH_BITS_MAX), None)
 
 
 def run(fax_path: Path) -> Order:
