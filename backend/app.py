@@ -11,6 +11,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from backend import config, pipeline
@@ -32,7 +33,7 @@ def _warm():
 
 @app.get("/", include_in_schema=False)
 def root():
-    return RedirectResponse("/docs")
+    return RedirectResponse("/ui/")
 
 
 @app.get("/health")
@@ -200,3 +201,7 @@ def _run_fax(path: Path) -> list[Order]:
     for o in orders:
         ORDERS[o.id] = o
     return orders
+
+
+# The pharmacist console, served from the same origin as the API (one public URL on Railway).
+app.mount("/ui", StaticFiles(directory=str(config.ROOT / "frontend"), html=True), name="ui")

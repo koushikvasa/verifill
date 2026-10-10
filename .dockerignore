@@ -1,0 +1,12 @@
+.venv
+.git
+.env
+.pytest_cache
+__pycache__
+**/__pycache__
+fonts
+docs
+tests
+samples/faxes/contact_sheet*.png
+samples/faxes/fax_inbox_all.pdf
+samples/robustness/J09_pure_noise.png
