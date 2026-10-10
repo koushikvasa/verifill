@@ -54,6 +54,13 @@ def run_all(order: Order, ocr_text: str = "") -> None:
     for e in evidence:
         note(F.drug, e)
     drug = val[F.drug] if rxnorm.canonical(val[F.drug]) else None
+    if drug is None and drug_readings and not cands:
+        # readers disagree only between a partial and a full read of the SAME drug
+        # ("Lev?thyro?ne" vs "Levothyroxine"): still run the dose checks against it
+        resolved = {m for r in drug_readings for m in lasa.matches(r)}
+        if len(resolved) == 1 and all(lasa.matches(r) for r in drug_readings):
+            drug = resolved.pop()
+            note(F.drug, f"evidence only: every reading is consistent with {drug}")
     if val[F.drug] and "?" not in val[F.drug] and not cands:
         add(F.drug, rxnorm.drug_exists(val[F.drug]))
         add(F.drug, rules.controlled_schedule(val[F.drug]))

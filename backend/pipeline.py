@@ -20,7 +20,7 @@ from pathlib import Path
 from PIL import Image
 from rapidfuzz import fuzz
 
-from backend import config, guard, ingest, safety, scoring, tracing
+from backend import callback, config, guard, ingest, safety, scoring, tracing
 from backend.extract import ground_ocr, ocr, vision
 from backend.models import (AuditEvent, ExtractedField, FaxType, FieldName, Order, OrderStatus, PickStatus,
                             PickTicket, Reading, Status)
@@ -226,6 +226,8 @@ def _finish(order: Order, ocr_text: str, failures: list[str], refill: list | Non
     order.pick_ticket = (PickTicket(status=PickStatus.blocked, warnings=["refill denied by prescriber"])
                          if order.status == OrderStatus.denied_by_prescriber else pick_ticket(order))
     safety.gate(order)                             # L6: re-assert invariants
+    if callback.draft(order):
+        _audit(order, "callback", "drafted", "callback to prescriber drafted for red fields")
     _audit(order, "pipeline", "done", order.status.value)
     tracing.submit_order(order.id, "success" if order.status == OrderStatus.ready_to_fill else "failure",
                          summary=_summary(order))
@@ -319,6 +321,8 @@ def resolve(order: Order, field: FieldName, value: str, pharmacist: str, overrid
         scoring.score_order(new, ocr_text)
         new.pick_ticket = pick_ticket(new)
         safety.gate(new)
+        new.callback_draft = None
+        callback.draft(new)
         t["output"] = {"action": action, "status": new.status.value,
                        "pick": new.pick_ticket.status.value if new.pick_ticket else None}
     tracing.submit_order(new.id, "success" if new.status == OrderStatus.ready_to_fill else "failure",
