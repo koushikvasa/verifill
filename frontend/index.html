@@ -267,7 +267,7 @@ header .ghost:hover{border-color:var(--bar-mute)}
     <button class="ghost" id="setBtn" aria-expanded="false">Data: <span id="srcLbl">Demo</span></button>
     <div class="menu" id="menu" hidden>
       <div class="seg" role="group" aria-label="Data source"><button id="modeMock" aria-pressed="true">Demo faxes</button><button id="modeLive" aria-pressed="false">Live API</button></div>
-      <label for="apiBase">Backend URL<input id="apiBase" value="http://localhost:8000"></label><script>document.getElementById("apiBase").value=(location.protocol.startsWith("http")&&location.port!=="5500")?location.origin:"http://localhost:8000";</script>
+      <label for="apiBase">Backend URL<input id="apiBase" value="http://localhost:8000"></label><script>document.getElementById("apiBase").value=(location.protocol.startsWith("http")&&!["5500","5600"].includes(location.port))?location.origin:"http://localhost:8000";</script>
       <div id="health" class="demo">Demo mode uses the 8 sample faxes plus an injection test. Live mode calls the FastAPI backend.</div>
     </div>
     <div class="who"><i>RPh</i><span>Pharmacist on duty</span></div>
@@ -482,7 +482,7 @@ function mockInventory(o){
   o.pick_ticket={status:pick<qty?"partial":"in_stock",item,qty_needed:qty,qty_to_pick:pick,owed:qty-pick,substitution:null,substitution_requires_approval:false,warnings:item.aisle==="CII"?["Controlled substance: count and log"]:[]};
 }
 /* ============ STATE + API ============ */
-const DEFAULT_BASE=(location.protocol.startsWith("http")&&location.port!=="5500")?location.origin:"http://localhost:8000";/* served by the API itself (Railway /ui) -> same origin */
+const DEFAULT_BASE=(location.protocol.startsWith("http")&&!["5500","5600"].includes(location.port))?location.origin:"http://localhost:8000";/* served by the API itself (Railway /ui) -> same origin */
 const S={mode:"mock",base:DEFAULT_BASE,samples:SAMPLES,orders:{},seen:{},filled:{},rejected:{},released:{},lastAction:null,cur:null,issue:0,tab:"open",stage:"review",busy:false,view:"fax",imgSize:{},showCall:false,scanOk:false};
 const $=s=>document.querySelector(s);
 const esc=v=>String(v??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
