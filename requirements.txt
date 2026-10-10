@@ -10,3 +10,4 @@ opencv-python-headless>=4.9
 pytesseract>=0.3.10
 rapidfuzz>=3.9
 prismtrace-sdk>=0.5.1
+pypdfium2>=4.30

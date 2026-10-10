@@ -18,7 +18,8 @@ def docs():
         yield (f"drug_{name.replace(' ', '_')}.txt",
                f"DRUG {name}. Marketed strengths (mg): {', '.join(str(s) for s in x['strengths_mg'])}. "
                f"Forms: {', '.join(x['forms'])}. Max daily dose: {x['max_daily_mg']} mg. Class: {x['class']}. "
-               f"Indications: {', '.join(x['indications'])}.")
+               f"Indications: {', '.join(x['indications'])}."
+               + (f" DEA schedule {x['schedule']} controlled substance." if x.get("schedule") else ""))
     yield ("drug_brands.txt", "BRAND TO GENERIC: " + "; ".join(f"{b} = {g}" for b, g in d["brands"].items()))
     for a, b in json.loads((config.DATA_DIR / "lasa_pairs.json").read_text())["pairs"]:
         yield (f"lasa_{a}_{b}.txt", f"LOOK-ALIKE SOUND-ALIKE PAIR (ISMP): {a} and {b} are commonly confused. Verify before dispensing.")

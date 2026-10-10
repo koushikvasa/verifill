@@ -114,12 +114,25 @@ class PickTicket(BaseModel):
 class OrderStatus(str, Enum):
     ready_to_fill = "ready_to_fill"
     needs_pharmacist = "needs_pharmacist"
-    rejected = "rejected"        # guardrail blocked or unreadable
+    rejected = "rejected"                    # guardrail blocked or unreadable
+    not_prescription = "not_prescription"    # lab result, cover sheet only, letter, etc. -> filed, no order
+    denied_by_prescriber = "denied_by_prescriber"  # refill request came back DENIED
+
+
+class FaxType(str, Enum):
+    new_rx = "new_rx"                        # handwritten pad, freeform note, typed EHR printout
+    refill_authorization = "refill_authorization"  # pharmacy's refill request faxed back by prescriber
+    cover_sheet = "cover_sheet"              # skip page
+    other = "other"                          # lab results, letters, prior auth... -> not_prescription
 
 
 class Order(BaseModel):
     id: str
     fax_file: str
+    fax_id: Optional[str] = None             # groups orders split from one fax (multi-drug faxes)
+    page: int = 1                            # page of the fax this order came from
+    fax_type: FaxType = FaxType.new_rx
+    orientation_fixed: int = 0               # degrees rotated before reading (0/90/180/270)
     status: OrderStatus = OrderStatus.needs_pharmacist
     fields: dict[FieldName, ExtractedField] = Field(default_factory=dict)
     guardrail_flags: list[str] = Field(default_factory=list)

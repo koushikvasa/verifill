@@ -7,6 +7,7 @@ Track: Fax to Fill. Theme: AI You Can Trust. Speed matters, but correctness of t
 Faxed prescription image → structured, verified order → inventory pick ticket. Anything uncertain goes to the pharmacist with a visible reason. Never guesses.
 
 ## Pipeline (backend/pipeline.py)
+0. `ingest.py`: split pages, fix orientation, dewarp photos, classify page (cover / refill response / new Rx / other). Multi-drug pages → one Order per drug (shared `fax_id`).
 1. `guard.py`: guardrail on raw OCR text BEFORE any model call (prompt injection). Hit → order `rejected`.
 2. `extract/ocr.py` (Tesseract) + `extract/vision.py` reader A and reader B (two vision models, different vendors, via Nicrron).
 3. `extract/zoom.py`: crop/upscale/re-read low-confidence fields (stretch).
@@ -43,7 +44,7 @@ curl -X POST localhost:8000/orders/sample/RX-003 | python -m json.tool
 ```
 
 ## Test data
-`samples/faxes/RX-00{1..8}_fax.png` + `ground_truth.json` (written values + expected flags + expected outcome). `samples/README.md` explains each case. Only RX-001 should end `ready_to_fill`.
+`samples/faxes/RX-001..019` (PNG, RX-012 is a 2-page PDF) + `ground_truth.json` (`orders` list per fax, expected flags, expected outcome: ready_to_fill | needs_pharmacist | rejected | not_prescription | denied_by_prescriber). `samples/README.md` explains each case. Faxes come in many kinds (typed, multi-drug, cover sheets, upside down, photos, refill responses, non-prescriptions): see `docs/FAX_VARIETY.md`; the ingest stage (`backend/ingest.py`) runs first. Regenerate the variety pack with `python scripts/make_faxes_v2.py --out samples/faxes --fonts fonts`.
 
 ## Style
 Python 3.11+, type hints, pydantic v2, small functions, no new frameworks. Keep diffs focused; this is a 4-hour build. Prefer deterministic logic over LLM calls for checks.

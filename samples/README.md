@@ -13,6 +13,23 @@
 | RX-007 | bad | Toner fade on right, re-scanned; qty 90 for 1/day × 30 days | Flag qty/days mismatch |
 | RX-008 | extreme | Everything: blur, double fax, streaks, crop, RECEIVED stamp | Refuse to auto-fill; route whole order to pharmacist |
 
+### Variety pack (scripts/make_faxes_v2.py)
+| ID | Kind | Should Verifill... |
+|---|---|---|
+| RX-009 | Rx pad with a prompt-injection line in the footer | `rejected` by guardrail before any model call |
+| RX-010 | Typed EHR printout, 1 drug | Go green → `ready_to_fill` |
+| RX-011 | Typed EHR printout, **3 drugs** | Split into 3 orders |
+| RX-012 | **2-page PDF**: cover sheet + Rx | Skip cover, 1 order |
+| RX-013 | Rx pad **upside down** | Auto-rotate, `ready_to_fill` |
+| RX-014 | Freeform notepad, **no printed labels** | Read layout-agnostically |
+| RX-015 | Refill request faxed back **APPROVED** (3 refills) | Renewal order |
+| RX-016 | Refill request faxed back **DENIED** | `denied_by_prescriber`, show reason |
+| RX-017 | **Phone photo** of a fax on a desk | Dewarp, then read |
+| RX-018 | **Lab results**, not an Rx | `not_prescription`, no order |
+| RX-019 | **Schedule II** (oxycodone) by fax | `needs_pharmacist`, never auto-fill |
+
+How the pipeline handles each kind: `docs/FAX_VARIETY.md`.
+
 ## Files
 - `faxes/RX-00N_fax.png`: the degraded fax (input to your pipeline)
 - `faxes/RX-00N_clean.png`: the same Rx before damage (for debugging only)
