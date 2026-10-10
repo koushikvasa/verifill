@@ -86,6 +86,10 @@ def read_words(img: Image.Image, clean: bool = True) -> list[dict]:
     inv = None
     if clean:
         img, inv = preprocess(img)
+    return _words(img, inv)
+
+
+def _words(img: Image.Image, inv: np.ndarray | None) -> list[dict]:
     d = pytesseract.image_to_data(img, output_type=pytesseract.Output.DICT, config="--psm 3")
     out = []
     for i, w in enumerate(d["text"]):
@@ -95,7 +99,6 @@ def read_words(img: Image.Image, clean: bool = True) -> list[dict]:
             out.append({"text": w, "conf": max(float(d["conf"][i]), 0) / 100, "pbox": pbox,
                         "bbox": _to_original(pbox, inv) if inv is not None else pbox,
                         "line": (d["block_num"][i], d["par_num"][i], d["line_num"][i])})
-    read_words.last_clean = img if clean else None   # used by the DAW checkbox check
     return out
 
 
@@ -219,6 +222,12 @@ def _daw(img: Image.Image | None, rows: list[list[dict]]) -> Reading | None:
                    confidence=round(min(0.5 + ratio / 10, 0.9), 3), bbox=d_box)
 
 
+def _below_rx(at: dict[str, int], ri: int) -> bool:
+    """The prescriber block sits under the Sig/Qty/Refills rows."""
+    anchors = [at[f] for f in ("sig", "quantity", "days_supply", "refills") if f in at]
+    return bool(anchors) and ri > max(anchors)
+
+
 def parse_fields(words: list[dict], img: Image.Image | None = None) -> dict[FieldName, Reading | None]:
     """Every FieldName -> Reading (or None if the label/value wasn't found)."""
     rows = _lines(words)
@@ -231,6 +240,8 @@ def parse_fields(words: list[dict], img: Image.Image | None = None) -> dict[Fiel
         if spans and spans[0][0] == "date_written" and spans[0][1] >= 2:
             spans.insert(0, ("dob", 0, 1))
         for k, (field, s, e) in enumerate(spans):
+            if field in ("npi", "lic") and not _below_rx(at, ri):
+                continue
             at.setdefault(field, ri)
             end = spans[k + 1][1] if k + 1 < len(spans) else len(row)
             if field != "lic" and out.get(field) is None:
@@ -273,8 +284,9 @@ def parse_fields(words: list[dict], img: Image.Image | None = None) -> dict[Fiel
 
 def read(img: Image.Image) -> tuple[str, dict[FieldName, Reading | None], list[dict]]:
     """One call for the pipeline: (raw text, fields, words)."""
-    words = read_words(img)
-    return text_of(words), parse_fields(words, read_words.last_clean), words
+    clean, inv = preprocess(img)
+    words = _words(clean, inv)
+    return text_of(words), parse_fields(words, clean), words
 
 
 if __name__ == "__main__":
