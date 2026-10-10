@@ -131,7 +131,7 @@ def _score(tok: str, label: str) -> float:
     if tok == label or tok in ALIASES.get(label, ()):
         return 100.0
     if len(label) <= 3:   # glued junk after a short label: "sig/", "Sigeet"
-        return 90.0 if tok.startswith(label) and len(tok) <= len(label) + 3 else 0.0
+        return 90.0 if label.isalpha() and tok.startswith(label) and len(tok) <= len(label) + 3 else 0.0
     if len(tok) < 3:
         return 0.0
     r = fuzz.ratio(tok, label)
