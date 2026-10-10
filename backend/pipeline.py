@@ -12,14 +12,16 @@ and can only push the order toward needs_pharmacist, never toward ready_to_fill.
 import uuid
 from pathlib import Path
 
+
 from PIL import Image
 
 from backend import guard, safety, scoring, tracing
 from backend.extract import ocr, vision
 from backend.models import (AuditEvent, ExtractedField, FieldName, Order, OrderStatus, PickStatus,
-                            PickTicket, Status)
+                            PickTicket, Reading, Status)
 
 PICK_FIELDS = (FieldName.drug, FieldName.strength, FieldName.dosage_form)
+OCR_TEXT: dict[str, str] = {}      # order id -> page OCR text, for re-scoring after a pharmacist edit
 
 
 def run(fax_path: Path) -> Order:
@@ -39,6 +41,7 @@ def run(fax_path: Path) -> Order:
         failures.append(f"ocr failed: {e}")
         _audit(order, "ocr", "error", str(e))
 
+    OCR_TEXT[order.id] = ocr_text
     order.guardrail_flags = guard.check(ocr_text, order.id)
     if order.guardrail_flags:
         return _reject(order, "guard", order.guardrail_flags)
@@ -137,3 +140,51 @@ def _values(order: Order) -> dict:
 def _summary(order: Order) -> str:
     flagged = {f.value: ef.status.value for f, ef in order.fields.items() if ef.status != Status.verified}
     return f"status={order.status.value}; non-green fields={flagged}"
+
+
+# ---------- pharmacist resolve (safety layer L7) ----------
+
+class ResolveRefused(Exception):
+    """The pharmacist's value still fails checks and no override reason was given."""
+    def __init__(self, failed: list[str]):
+        super().__init__("; ".join(failed))
+        self.failed = failed
+
+
+def resolve(order: Order, field: FieldName, value: str, pharmacist: str, override_reason: str | None = None) -> Order:
+    """Pharmacist confirms or corrects one field. The value is re-checked like any other:
+    a failing check refuses the change unless the pharmacist types an override reason.
+    Returns a NEW order (the stored one is untouched if refused)."""
+    ocr_text = OCR_TEXT.get(order.id, "")
+    new = order.model_copy(deep=True)
+    ef = new.fields[field]
+    old = ef.value
+    ef.value, ef.status, ef.confidence = value, Status.confirmed, 1.0
+    ef.readings.append(Reading(source=f"pharmacist:{pharmacist}", value=value, confidence=1.0))
+
+    with tracing.step("resolve", new.id, input_obj={"field": field.value, "value": value, "by": pharmacist}) as t:
+        from backend import verify
+        verify.reset(new)
+        verify.run_all(new, ocr_text)
+        failed = [c.detail for c in new.fields[field].checks if not c.passed]
+        failed += [f"{c.detail} (on {f.value})" for f, other in new.fields.items() if f != field and other.status ==
+                   Status.confirmed for c in other.checks if not c.passed
+                   and not any(r.startswith("pharmacist override") for r in other.reasons)]
+        if failed and not (override_reason and override_reason.strip()):
+            t["output"] = {"refused": failed}
+            raise ResolveRefused(failed)
+        action = "override" if failed else ("confirmed" if (old or "") == value else "corrected")
+        detail = f"{field.value}: {old!r} -> {value!r}"
+        if failed:
+            detail += f"; overrode failed checks ({'; '.join(failed)}) because: {override_reason.strip()}"
+            ef.reasons = [f"pharmacist override by {pharmacist}: {override_reason.strip()}"] + failed
+        new.audit.append(AuditEvent(actor=f"pharmacist:{pharmacist}", action=action, detail=detail[:500],
+                                    trace_id=t.get("trace_id")))
+        scoring.score_order(new, ocr_text)
+        new.pick_ticket = pick_ticket(new)
+        safety.gate(new)
+        t["output"] = {"action": action, "status": new.status.value,
+                       "pick": new.pick_ticket.status.value if new.pick_ticket else None}
+    tracing.submit_order(new.id, "success" if new.status == OrderStatus.ready_to_fill else "failure",
+                         summary=f"after {action} of {field.value} by {pharmacist}: {_summary(new)}")
+    return new

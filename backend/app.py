@@ -10,10 +10,10 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, RedirectResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from backend import config, pipeline
-from backend.models import Order
+from backend.models import FieldName, Order, OrderStatus
 
 app = FastAPI(title="Verifill")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -69,15 +69,28 @@ def get_order(order_id: str):
 
 
 class Resolve(BaseModel):
-    field: str
-    value: str
-    pharmacist: str = "pharmacist"
+    field: FieldName
+    value: str = Field(min_length=1)
+    pharmacist: str = Field(min_length=2, description="who is confirming; recorded in the audit trail")
+    override_reason: str | None = Field(None, description="required to confirm a value that still fails a check")
 
 
 @app.post("/orders/{order_id}/resolve", response_model=Order)
 def resolve(order_id: str, body: Resolve):
-    """TODO: set field value, status=confirmed, audit event, re-run checks + inventory."""
-    raise HTTPException(501, "not implemented yet")
+    """Pharmacist confirms/corrects one field. Re-runs verify, scoring, inventory and the safety gate.
+    409 if the value still fails a check and no override_reason is given (details in the response)."""
+    if order_id not in ORDERS:
+        raise HTTPException(404)
+    order = ORDERS[order_id]
+    if order.status == OrderStatus.rejected:
+        raise HTTPException(409, "order was rejected by the guardrail; it cannot be resolved field by field")
+    try:
+        ORDERS[order_id] = pipeline.resolve(order, body.field, body.value.strip(), body.pharmacist.strip(),
+                                            body.override_reason)
+    except pipeline.ResolveRefused as e:
+        raise HTTPException(409, {"message": "value still fails checks; add override_reason to confirm anyway",
+                                  "failed_checks": e.failed})
+    return ORDERS[order_id]
 
 
 class Scan(BaseModel):

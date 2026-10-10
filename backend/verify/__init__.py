@@ -20,6 +20,15 @@ def _llm_values(ef: ExtractedField) -> list[str]:
     return list(dict.fromkeys(r.value for r in ef.readings if r.source != "ocr" and r.value))
 
 
+def reset(order: Order) -> None:
+    """Clear checks/candidates/verify notes so run_all can be re-run (after a pharmacist edit)."""
+    for ef in order.fields.values():
+        ef.checks, ef.candidates = [], []
+        ef.reasons = [r for r in ef.reasons if r.startswith(("reader ", "pharmacist override"))]
+        if ef.status == Status.conflict and any(r.source.startswith("pharmacist:") for r in ef.readings):
+            ef.status = Status.confirmed          # re-opened confirmation: re-check it from scratch
+
+
 def run_all(order: Order, ocr_text: str = "") -> None:
     fx = order.fields
     pre = _prelim(order, ocr_text)
@@ -34,8 +43,11 @@ def run_all(order: Order, ocr_text: str = "") -> None:
             fx[f].reasons.append(text)
 
     # --- drug identity + look-alikes ---
-    drug_readings = _llm_values(fx[F.drug]) or ([pre[F.drug].value] if pre[F.drug].value else [])
-    clean = pre[F.drug].status == Status.verified
+    if fx[F.drug].status == Status.confirmed:             # pharmacist decided: their value is the reading
+        drug_readings = [fx[F.drug].value] if fx[F.drug].value else []
+    else:
+        drug_readings = _llm_values(fx[F.drug]) or ([pre[F.drug].value] if pre[F.drug].value else [])
+    clean = pre[F.drug].status in (Status.verified, Status.confirmed)
     c, cands, evidence = lasa.check(drug_readings, clean, val[F.sig])
     add(F.drug, c)
     fx[F.drug].candidates = cands

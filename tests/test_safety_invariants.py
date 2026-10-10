@@ -172,3 +172,15 @@ def test_live_only_rx001_ready_and_no_false_ready():
         if o.status == OrderStatus.ready_to_fill:
             assert all(o.fields[f].status == Status.verified for f in CRITICAL_FIELDS)
     assert false_ready == []
+
+
+def test_confirmed_value_that_later_fails_a_check_reopens():
+    ef = _field(F.strength, "0.5 mg", "0.5 mg", ocr="0.5 mg")
+    ef.status = Status.confirmed
+    ef.checks.append(Check(name="decimal_error", passed=False, detail="10x marketed"))
+    assert scoring.score_field(ef).status == Status.conflict
+    ef2 = _field(F.strength, "0.5 mg", "0.5 mg")
+    ef2.status = Status.confirmed
+    ef2.checks.append(Check(name="decimal_error", passed=False, detail="10x marketed"))
+    ef2.reasons.append("pharmacist override by J: prescriber confirmed by phone")
+    assert scoring.score_field(ef2).status == Status.confirmed

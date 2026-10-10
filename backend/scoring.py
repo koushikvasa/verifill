@@ -29,7 +29,7 @@ from backend.models import CRITICAL_FIELDS, ExtractedField, FieldName, Order, Or
 EXACT = {FieldName.dob, FieldName.date_written, FieldName.drug, FieldName.strength, FieldName.dosage_form,
          FieldName.sig, FieldName.quantity, FieldName.days_supply, FieldName.refills, FieldName.daw,
          FieldName.npi}
-KEEP_PREFIXES = ("reader ", "unverified: ", "evidence only: ", "suggestion: ")
+KEEP_PREFIXES = ("reader ", "unverified: ", "evidence only: ", "suggestion: ", "pharmacist override")
 GROUND_RATIO = 80        # OCR is noisy on handwriting: ~80% character similarity counts as "seen"
 _WORD_NUMS = r"\((?:[a-z -]+)\)"   # "(thirty)" spelled-out quantity
 
@@ -77,6 +77,12 @@ def score_field(f: ExtractedField, ocr_text: str = "") -> ExtractedField:
     """Sets f.value, f.status, f.confidence and f.reasons from f.readings + f.checks.
     A pharmacist-confirmed field is never re-colored."""
     if f.status == Status.confirmed:
+        # a confirmation only covers checks the pharmacist explicitly overrode; a check that
+        # fails later (e.g. strength re-checked once the drug is confirmed) re-opens the field
+        failed = [c.detail for c in f.checks if not c.passed]
+        if failed and not any(r.startswith("pharmacist override") for r in f.reasons):
+            f.status = Status.conflict
+            f.reasons = list(dict.fromkeys(f.reasons + ["pharmacist-confirmed value fails a check: " + "; ".join(failed)]))
         return f
     # keep notes from earlier stages: reader errors, verify notes ("unverified: " caps at amber)
     reasons: list[str] = [r for r in f.reasons if r.startswith(KEEP_PREFIXES)]

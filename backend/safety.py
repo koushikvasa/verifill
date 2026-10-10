@@ -9,7 +9,8 @@ Invariants:
 1. ready_to_fill  => every CRITICAL_FIELD is verified/confirmed and there are no guardrail flags
 2. verified field => >= 2 independent sources agree on its value, no failed check,
                      no partial ("?") value, no "unverified:" note
-3. confirmed field=> a pharmacist audit event exists for it
+3. confirmed field=> a pharmacist audit event exists for it, and any failed check on it was
+                     explicitly overridden with a typed reason
 4. amber/red field=> at least one human-readable reason
 5. pick ticket not blocked => drug, strength, dosage_form are verified/confirmed
 """
@@ -39,6 +40,8 @@ def violations(order: Order) -> list[str]:
         if ef.status == Status.confirmed and not any(
                 a.actor.startswith("pharmacist") and f.value in a.detail for a in order.audit):
             v.append(f"{f.value} is confirmed without a pharmacist audit event")
+        if ef.status == Status.confirmed and any(not c.passed for c in ef.checks) and                 not any(r.startswith("pharmacist override") for r in ef.reasons):
+            v.append(f"{f.value} is confirmed despite a failed check with no override reason")
         if ef.status in (Status.review, Status.conflict) and not ef.reasons:
             v.append(f"{f.value} is {ef.status.value} without a reason")
 
@@ -66,6 +69,10 @@ def gate(order: Order) -> list[str]:
         found = violations(order)
         if found:
             for ef in order.fields.values():
+                if ef.status == Status.confirmed and any(found_for(ef.name.value, x) and "override" in x
+                                                         for x in found):
+                    ef.status = Status.conflict
+                    ef.reasons.append("re-opened by safety gate: confirmed value fails a check")
                 if ef.status in (Status.review, Status.conflict) and not ef.reasons:
                     ef.reasons.append("needs review (added by safety gate)")
                 if ef.status == Status.verified and any(found_for(ef.name.value, x) for x in found):
