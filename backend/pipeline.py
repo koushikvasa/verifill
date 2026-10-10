@@ -14,7 +14,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from backend import guard, scoring, tracing
+from backend import guard, safety, scoring, tracing
 from backend.extract import ocr, vision
 from backend.models import (AuditEvent, ExtractedField, FieldName, Order, OrderStatus, PickStatus,
                             PickTicket, Status)
@@ -92,6 +92,9 @@ def run(fax_path: Path) -> Order:
 
     # 6. inventory: only when drug/strength/form are green (defence in depth; inventory also checks)
     order.pick_ticket = pick_ticket(order)
+
+    # 7. final safety gate (L6): re-assert invariants; violations downgrade + log
+    safety.gate(order)
 
     _audit(order, "pipeline", "done", order.status.value)
     tracing.submit_order(order.id, "success" if order.status == OrderStatus.ready_to_fill else "failure",

@@ -12,3 +12,4 @@ rapidfuzz>=3.9
 prismtrace-sdk>=0.5.1
 pypdfium2>=4.30
 truststore>=0.9
+pytest>=8
