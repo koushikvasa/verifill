@@ -48,6 +48,10 @@ if TESSERACT_CMD:
     import pytesseract as _pt
     _pt.pytesseract.tesseract_cmd = TESSERACT_CMD
 
+# Second, non-LLM OCR used only to confirm reader values on the page (backend/extract/ground_ocr.py).
+# rapidocr (default; needs rapidocr-onnxruntime) | easyocr | tesseract (Tesseract text only)
+GROUND_OCR = os.getenv("GROUND_OCR", "rapidocr").lower()
+
 # Scoring thresholds
 OCR_GREEN = float(os.getenv("OCR_GREEN", "0.80"))
 OCR_AMBER = float(os.getenv("OCR_AMBER", "0.55"))

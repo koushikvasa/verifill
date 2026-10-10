@@ -157,15 +157,46 @@ def score_field(f: ExtractedField, ocr_text: str = "") -> ExtractedField:
     return f
 
 
+_NUM = re.compile(r"(?<![\d.])\d+(?:\.\d+)?(?![\d.])")
+_DATE = re.compile(r"\b(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})\b")
+
+
 def _grounded(field: FieldName, key: str, ocr_n: str | None, ocr_text: str) -> bool:
-    """Pixel grounding: does the OCR evidence support the models' value?
-    If OCR read this field, it must roughly match. If OCR found nothing for the field,
-    fall back to a fuzzy search of the whole page text."""
+    """Strict pixel grounding: a near-miss of a dangerous value must NOT count as seen.
+    - strength: the exact number + unit appears ('0.5 mg' is not confirmed by '0.05 mg' or '5 mg')
+    - npi: the exact 10 digits appear; dates: the exact date appears
+    - quantity/days/refills: the exact number appears as a token
+    - drug: one word on the page matches closely AND closer than any look-alike partner
+    - names/sig: fuzzy (OCR is noisy on handwriting; the readers' exact agreement carries these)"""
     if field == FieldName.daw:
-        return True        # checkbox: no text to ground; two readers + OCR pixel vote suffice
-    if ocr_n:
-        return fuzz.ratio(key, ocr_n) >= GROUND_RATIO or fuzz.partial_ratio(key, ocr_n) >= 90
-    return bool(ocr_text) and fuzz.partial_ratio(key, ocr_text.lower()) >= GROUND_RATIO
+        return True
+    hay = ((ocr_n or "") + "\n" + (ocr_text or "")).lower()
+    if not hay.strip():
+        return False
+    if field == FieldName.strength:
+        m = re.match(r"(\d+(?:\.\d+)?)\s*([a-z]+)", key)
+        if not m:
+            return False
+        return bool(re.search(rf"(?<![\d.]){re.escape(m.group(1))}\s*{re.escape(m.group(2))}", hay))
+    if field == FieldName.npi:
+        return key in re.sub(r"[^\d\n ]", "", hay).replace(" ", "")
+    if field in (FieldName.dob, FieldName.date_written):
+        want = _DATE.match(key)
+        return bool(want) and any(tuple(int(x) for x in d) == tuple(int(x) for x in want.groups())
+                                  for d in _DATE.findall(hay))
+    if field in (FieldName.quantity, FieldName.days_supply, FieldName.refills):
+        nums = _NUM.findall(key)
+        return bool(nums) and nums[0] in set(_NUM.findall(hay.replace("#", " ")))
+    if field == FieldName.drug:
+        from backend.verify.lasa import partners
+        words = re.findall(r"[a-z][a-z-]{2,}", hay)
+        if " " in key:
+            return fuzz.partial_ratio(key, hay) >= 90
+        best = max(words, key=lambda w: fuzz.ratio(key, w), default="")
+        if fuzz.ratio(key, best) < 85:
+            return False
+        return all(fuzz.ratio(key, best) > fuzz.ratio(p, best) for p in partners(key))
+    return fuzz.partial_ratio(key, hay) >= GROUND_RATIO
 
 
 def _who(source: str) -> str:

@@ -21,6 +21,15 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 ORDERS: dict[str, Order] = {}
 
 
+@app.on_event("startup")
+def _warm():
+    from backend.extract import ground_ocr
+    try:
+        ground_ocr.warm()                 # load the OCR model once, not on the first fax
+    except Exception:  # noqa: BLE001  missing engine -> grounding falls back to Tesseract text
+        pass
+
+
 @app.get("/", include_in_schema=False)
 def root():
     return RedirectResponse("/docs")

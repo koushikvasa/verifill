@@ -21,10 +21,16 @@ def _field(name: F, a: str | None, b: str | None, ocr: str | None = None, conf=0
     return ExtractedField(name=name, readings=rs)
 
 
+REALISTIC = {F.patient_name: "Angela Moreno", F.dob: "03/14/1962", F.date_written: "10/09/2026",
+             F.drug: "Lisinopril", F.strength: "10 mg", F.dosage_form: "tablet", F.sig: "1 tab PO once daily",
+             F.quantity: "#30", F.days_supply: "30", F.refills: "3", F.daw: "false",
+             F.prescriber_name: "Maya Okafor, MD", F.npi: "1234567893"}
+
+
 def _green_order() -> Order:
     o = Order(id="T-1", fax_file="t.png")
     for f in F:
-        v = {F.strength: "10 mg", F.npi: "1234567893"}.get(f, "x")
+        v = REALISTIC[f]
         o.fields[f] = _field(f, v, v, ocr=v)
     scoring.score_order(o)
     return o

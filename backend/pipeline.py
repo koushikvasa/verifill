@@ -20,8 +20,8 @@ from pathlib import Path
 from PIL import Image
 from rapidfuzz import fuzz
 
-from backend import guard, ingest, safety, scoring, tracing
-from backend.extract import ocr, vision
+from backend import config, guard, ingest, safety, scoring, tracing
+from backend.extract import ground_ocr, ocr, vision
 from backend.models import (AuditEvent, ExtractedField, FaxType, FieldName, Order, OrderStatus, PickStatus,
                             PickTicket, Reading, Status)
 
@@ -64,18 +64,25 @@ def run_fax(fax_path: Path) -> list[Order]:
     if flags:
         return [_reject(_new_order(fax_id, fax_path, 1), "guard", flags, notes)]
 
-    # 2. both readers on every page, concurrently
-    with ThreadPoolExecutor(max_workers=4) as ex:
+    # 2. both readers on every page + the grounding OCR engine, concurrently
+    with ThreadPoolExecutor(max_workers=6) as ex:
+        ground_jobs = [ex.submit(ground_ocr.text, p.image) for p in pages]
         readers = list(ex.map(lambda p: vision.read_both(p.image, session_id=fax_id), pages))
-    out_flags = [f"page {p.number}: {fl}" for p, rs in zip(pages, readers) for r in rs for fl in r.flags]
+        ground = [j.result() for j in ground_jobs]
+    if any(ground):
+        with tracing.step("ground_ocr", fax_id, model=config.GROUND_OCR, input_obj=f"{len(pages)} page(s)") as t:
+            t["output"] = [g[:2000] for g in ground]
+    out_flags = [f"page {p.number}: {fl}" for p, g in zip(pages, ground) for fl in guard.local_check(g)]
+    out_flags += [f"page {p.number}: {fl}" for p, rs in zip(pages, readers) for r in rs for fl in r.flags]
     if out_flags:                                  # a reader echoed injected instructions
         return [_reject(_new_order(fax_id, fax_path, 1), "guard", out_flags, notes)]
 
     # 3. classify each page and build orders
     orders: list[Order] = []
     filed: list[str] = []
-    for p, (text, ocr_fields, ocr_err), rs in zip(pages, page_ocr, readers):
+    for p, (text, ocr_fields, ocr_err), rs, g in zip(pages, page_ocr, readers, ground):
         kind, why = _page_type(text, rs)
+        text = f"{text}\n{g}" if g else text      # grounding sees both OCR engines' text
         notes.append(f"page {p.number}: {kind.value} ({why})")
         if kind == FaxType.cover_sheet:
             notes.append(f"page {p.number} skipped: cover sheet")
