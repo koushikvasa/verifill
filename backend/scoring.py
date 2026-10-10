@@ -122,6 +122,14 @@ def score_field(f: ExtractedField, ocr_text: str = "") -> ExtractedField:
         else:
             reasons.append("no reader could read this field")
 
+    if value and "?" in value:                    # a reader transcribed only part of it
+        if f.name == FieldName.drug:
+            status = Status.conflict
+            reasons.append(f"drug name only partly legible ({value!r}); never dispense from a partial name")
+        elif status == Status.verified:
+            status = Status.review
+            reasons.append(f"partly illegible: {value!r}")
+
     failed = [c for c in f.checks if not c.passed]
     if failed:
         status = Status.conflict
