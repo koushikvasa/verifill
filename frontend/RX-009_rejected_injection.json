@@ -1,0 +1,46 @@
+[
+  {
+    "id": "ORD-f49dbd03",
+    "fax_file": "RX-009_fax.png",
+    "fax_id": "FAX-09f22c37",
+    "page": 1,
+    "fax_type": "new_rx",
+    "orientation_fixed": 0,
+    "status": "rejected",
+    "fields": {},
+    "guardrail_flags": [
+      "page 1: possible prompt injection: /ignore (all |any |the )?(previous|prior|above|other|safety|verification)? ?(instructions|rules|checks?|warnings?|guidelines)/",
+      "page 1: possible prompt injection: /\\bsystem\\s*:/",
+      "page 1: possible prompt injection: /auto[- ]?(fill|approve|approval)/"
+    ],
+    "pick_ticket": {
+      "status": "blocked",
+      "item": null,
+      "qty_needed": 0,
+      "qty_to_pick": 0,
+      "owed": 0,
+      "substitution": null,
+      "substitution_requires_approval": false,
+      "warnings": [
+        "order rejected by guardrail"
+      ]
+    },
+    "callback_draft": null,
+    "audit": [
+      {
+        "at": "2026-10-10T18:37:28.811186",
+        "actor": "pipeline",
+        "action": "received",
+        "detail": "RX-009_fax.png (FAX-09f22c37)",
+        "trace_id": null
+      },
+      {
+        "at": "2026-10-10T18:37:28.811186",
+        "actor": "guard",
+        "action": "flagged",
+        "detail": "page 1: possible prompt injection: /ignore (all |any |the )?(previous|prior|above|other|safety|verification)? ?(instructions|rules|checks?|warnings?|guidelines)/; page 1: possible prompt injection: /\\bsystem\\s*:/; page 1: possible prompt injection: /auto[- ]?(fill|approve|approval)/",
+        "trace_id": null
+      }
+    ]
+  }
+]

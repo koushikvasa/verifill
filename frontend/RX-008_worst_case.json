@@ -1,0 +1,417 @@
+[
+  {
+    "id": "ORD-ea8c1719",
+    "fax_file": "RX-008_fax.png",
+    "fax_id": "FAX-e99844d3",
+    "page": 1,
+    "fax_type": "new_rx",
+    "orientation_fixed": 0,
+    "status": "needs_pharmacist",
+    "fields": {
+      "patient_name": {
+        "name": "patient_name",
+        "value": null,
+        "status": "conflict",
+        "confidence": 0.0,
+        "readings": [
+          {
+            "source": "reader_a:anthropic/claude-sonnet-5",
+            "value": "G????? Astorte",
+            "confidence": 0.3,
+            "bbox": null
+          },
+          {
+            "source": "reader_b:openai/gpt-5.6-terra",
+            "value": "Carol ?",
+            "confidence": 0.3,
+            "bbox": null
+          }
+        ],
+        "checks": [],
+        "reasons": [
+          "readers disagree: reader A read 'G????? Astorte'; reader B read 'Carol ?'"
+        ],
+        "candidates": []
+      },
+      "dob": {
+        "name": "dob",
+        "value": null,
+        "status": "review",
+        "confidence": 0.0,
+        "readings": [
+          {
+            "source": "reader_a:anthropic/claude-sonnet-5",
+            "value": null,
+            "confidence": 0.3,
+            "bbox": null
+          },
+          {
+            "source": "reader_b:openai/gpt-5.6-terra",
+            "value": null,
+            "confidence": 0.3,
+            "bbox": null
+          }
+        ],
+        "checks": [],
+        "reasons": [
+          "no reader could read this field"
+        ],
+        "candidates": []
+      },
+      "date_written": {
+        "name": "date_written",
+        "value": null,
+        "status": "review",
+        "confidence": 0.0,
+        "readings": [
+          {
+            "source": "reader_a:anthropic/claude-sonnet-5",
+            "value": null,
+            "confidence": 0.3,
+            "bbox": null
+          },
+          {
+            "source": "reader_b:openai/gpt-5.6-terra",
+            "value": null,
+            "confidence": 0.3,
+            "bbox": null
+          }
+        ],
+        "checks": [],
+        "reasons": [
+          "no reader could read this field"
+        ],
+        "candidates": []
+      },
+      "drug": {
+        "name": "drug",
+        "value": null,
+        "status": "conflict",
+        "confidence": 0.0,
+        "readings": [
+          {
+            "source": "reader_a:anthropic/claude-sonnet-5",
+            "value": "G??????e",
+            "confidence": 0.3,
+            "bbox": null
+          },
+          {
+            "source": "reader_b:openai/gpt-5.6-terra",
+            "value": "Glipizide",
+            "confidence": 0.9,
+            "bbox": null
+          }
+        ],
+        "checks": [
+          {
+            "name": "lasa",
+            "passed": false,
+            "detail": "look-alike risk: glipizide vs glyburide (handwriting is not clean enough to tell them apart)",
+            "grounded_in": "local"
+          }
+        ],
+        "reasons": [
+          "readers disagree: reader A read 'G??????e'; reader B read 'Glipizide'",
+          "look-alike risk: glipizide vs glyburide (handwriting is not clean enough to tell them apart)"
+        ],
+        "candidates": [
+          "glipizide",
+          "glyburide"
+        ]
+      },
+      "strength": {
+        "name": "strength",
+        "value": "5 mg",
+        "status": "review",
+        "confidence": 0.6,
+        "readings": [
+          {
+            "source": "reader_a:anthropic/claude-sonnet-5",
+            "value": "5 mg",
+            "confidence": 0.3,
+            "bbox": null
+          },
+          {
+            "source": "reader_b:openai/gpt-5.6-terra",
+            "value": "5 mg",
+            "confidence": 0.9,
+            "bbox": null
+          }
+        ],
+        "checks": [],
+        "reasons": [
+          "unverified: cannot check against the drug reference until the drug is identified",
+          "both readers agree but at least one marked it hard to read"
+        ],
+        "candidates": []
+      },
+      "dosage_form": {
+        "name": "dosage_form",
+        "value": "tablet",
+        "status": "review",
+        "confidence": 0.6,
+        "readings": [
+          {
+            "source": "reader_a:anthropic/claude-sonnet-5",
+            "value": "tablet",
+            "confidence": 0.3,
+            "bbox": null
+          },
+          {
+            "source": "reader_b:openai/gpt-5.6-terra",
+            "value": "tablet",
+            "confidence": 0.9,
+            "bbox": null
+          }
+        ],
+        "checks": [],
+        "reasons": [
+          "unverified: cannot check against the drug reference until the drug is identified",
+          "both readers agree but at least one marked it hard to read"
+        ],
+        "candidates": []
+      },
+      "sig": {
+        "name": "sig",
+        "value": null,
+        "status": "conflict",
+        "confidence": 0.0,
+        "readings": [
+          {
+            "source": "reader_a:anthropic/claude-sonnet-5",
+            "value": "1 tab ?? day with breakfast",
+            "confidence": 0.3,
+            "bbox": null
+          },
+          {
+            "source": "reader_b:openai/gpt-5.6-terra",
+            "value": "1 tab ?? daily with breakfast",
+            "confidence": 0.3,
+            "bbox": null
+          }
+        ],
+        "checks": [],
+        "reasons": [
+          "readers disagree: reader A read '1 tab ?? day with breakfast'; reader B read '1 tab ?? daily with breakfast'"
+        ],
+        "candidates": []
+      },
+      "quantity": {
+        "name": "quantity",
+        "value": null,
+        "status": "conflict",
+        "confidence": 0.0,
+        "readings": [
+          {
+            "source": "reader_a:anthropic/claude-sonnet-5",
+            "value": "#30 thirty",
+            "confidence": 0.3,
+            "bbox": null
+          },
+          {
+            "source": "reader_b:openai/gpt-5.6-terra",
+            "value": "#90 tablets",
+            "confidence": 0.9,
+            "bbox": null
+          }
+        ],
+        "checks": [],
+        "reasons": [
+          "readers disagree: reader A read '#30 thirty'; reader B read '#90 tablets'"
+        ],
+        "candidates": []
+      },
+      "days_supply": {
+        "name": "days_supply",
+        "value": null,
+        "status": "conflict",
+        "confidence": 0.0,
+        "readings": [
+          {
+            "source": "reader_a:anthropic/claude-sonnet-5",
+            "value": "30",
+            "confidence": 0.3,
+            "bbox": null
+          },
+          {
+            "source": "reader_b:openai/gpt-5.6-terra",
+            "value": "90",
+            "confidence": 0.9,
+            "bbox": null
+          }
+        ],
+        "checks": [],
+        "reasons": [
+          "readers disagree: reader A read '30'; reader B read '90'"
+        ],
+        "candidates": []
+      },
+      "refills": {
+        "name": "refills",
+        "value": null,
+        "status": "conflict",
+        "confidence": 0.0,
+        "readings": [
+          {
+            "source": "reader_a:anthropic/claude-sonnet-5",
+            "value": "3",
+            "confidence": 0.3,
+            "bbox": null
+          },
+          {
+            "source": "reader_b:openai/gpt-5.6-terra",
+            "value": "1",
+            "confidence": 0.9,
+            "bbox": null
+          }
+        ],
+        "checks": [],
+        "reasons": [
+          "readers disagree: reader A read '3'; reader B read '1'"
+        ],
+        "candidates": []
+      },
+      "daw": {
+        "name": "daw",
+        "value": "false",
+        "status": "verified",
+        "confidence": 0.9,
+        "readings": [
+          {
+            "source": "reader_a:anthropic/claude-sonnet-5",
+            "value": "false",
+            "confidence": 0.9,
+            "bbox": null
+          },
+          {
+            "source": "reader_b:openai/gpt-5.6-terra",
+            "value": "false",
+            "confidence": 0.9,
+            "bbox": null
+          }
+        ],
+        "checks": [],
+        "reasons": [],
+        "candidates": []
+      },
+      "prescriber_name": {
+        "name": "prescriber_name",
+        "value": "Priya Raman, MD",
+        "status": "review",
+        "confidence": 0.15,
+        "readings": [
+          {
+            "source": "reader_a:anthropic/claude-sonnet-5",
+            "value": "Priya Raman, MD",
+            "confidence": 0.3,
+            "bbox": null
+          },
+          {
+            "source": "reader_b:openai/gpt-5.6-terra",
+            "value": null,
+            "confidence": 0.3,
+            "bbox": null
+          }
+        ],
+        "checks": [],
+        "reasons": [
+          "only reader A could read this; reader B could not"
+        ],
+        "candidates": []
+      },
+      "npi": {
+        "name": "npi",
+        "value": null,
+        "status": "review",
+        "confidence": 0.0,
+        "readings": [
+          {
+            "source": "reader_a:anthropic/claude-sonnet-5",
+            "value": null,
+            "confidence": 0.3,
+            "bbox": null
+          },
+          {
+            "source": "reader_b:openai/gpt-5.6-terra",
+            "value": null,
+            "confidence": 0.3,
+            "bbox": null
+          }
+        ],
+        "checks": [],
+        "reasons": [
+          "suggestion: NPI not readable on fax; registry has 1 match(es) for Priya Raman, MD: 1452637899. Pharmacist must confirm.",
+          "no reader could read this field"
+        ],
+        "candidates": [
+          "1452637899"
+        ]
+      }
+    },
+    "guardrail_flags": [],
+    "pick_ticket": {
+      "status": "blocked",
+      "item": null,
+      "qty_needed": 0,
+      "qty_to_pick": 0,
+      "owed": 0,
+      "substitution": null,
+      "substitution_requires_approval": false,
+      "warnings": [
+        "blocked until verified by pharmacist: drug, strength, dosage_form"
+      ]
+    },
+    "callback_draft": "To: Dr. Priya Raman (phone (201) 555-0110, fax (201) 555-0111)\nRe: prescription for G????? Astorte (DOB unreadable), G??????e, received by fax RX-008_fax.png\n\nBefore we can fill this prescription we need you to confirm the following:\n- patient name: written as \"G????? Astorte / Carol ?\". readers disagree: reader A read 'G????? Astorte'; reader B read 'Carol ?'.\n- drug: written as \"G??????e / Glipizide\". look-alike risk: glipizide vs glyburide (handwriting is not clean enough to tell them apart). Please confirm which: glipizide, glyburide.\n- directions: written as \"1 tab ?? day with breakfast / 1 tab ?? daily with breakfast\". readers disagree: reader A read '1 tab ?? day with breakfast'; reader B read '1 tab ?? daily with breakfast'.\n- quantity: written as \"#30 thirty / #90 tablets\". readers disagree: reader A read '#30 thirty'; reader B read '#90 tablets'.\n- days supply: written as \"30 / 90\". readers disagree: reader A read '30'; reader B read '90'.\n- refills: written as \"3 / 1\". readers disagree: reader A read '3'; reader B read '1'.\n\nPlease call or fax back a corrected prescription. Nothing has been dispensed.\nVerifill Pharmacy, (212) 555-0100, fax (212) 555-0100. Order ORD-ea8c1719.",
+    "audit": [
+      {
+        "at": "2026-10-10T18:38:07.927016",
+        "actor": "pipeline",
+        "action": "received",
+        "detail": "RX-008_fax.png (FAX-e99844d3)",
+        "trace_id": null
+      },
+      {
+        "at": "2026-10-10T18:38:07.938591",
+        "actor": "ingest",
+        "action": "page",
+        "detail": "page 1: new_rx (both readers agree (keywords said new_rx))",
+        "trace_id": null
+      },
+      {
+        "at": "2026-10-10T18:38:07.927016",
+        "actor": "reader_a",
+        "action": "read",
+        "detail": "anthropic/claude-sonnet-5: ok, 1 medication(s)",
+        "trace_id": null
+      },
+      {
+        "at": "2026-10-10T18:38:07.927016",
+        "actor": "reader_b",
+        "action": "read",
+        "detail": "openai/gpt-5.6-terra: ok, 1 medication(s)",
+        "trace_id": null
+      },
+      {
+        "at": "2026-10-10T18:38:07.938591",
+        "actor": "safety_gate",
+        "action": "passed",
+        "detail": "all invariants hold",
+        "trace_id": null
+      },
+      {
+        "at": "2026-10-10T18:38:07.938591",
+        "actor": "callback",
+        "action": "drafted",
+        "detail": "callback to prescriber drafted for red fields",
+        "trace_id": null
+      },
+      {
+        "at": "2026-10-10T18:38:07.938591",
+        "actor": "pipeline",
+        "action": "done",
+        "detail": "needs_pharmacist",
+        "trace_id": null
+      }
+    ]
+  }
+]

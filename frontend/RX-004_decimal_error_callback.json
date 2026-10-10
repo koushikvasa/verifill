@@ -1,0 +1,461 @@
+[
+  {
+    "id": "ORD-225ba6b3",
+    "fax_file": "RX-004_fax.png",
+    "fax_id": "FAX-c09e1adb",
+    "page": 1,
+    "fax_type": "new_rx",
+    "orientation_fixed": 0,
+    "status": "needs_pharmacist",
+    "fields": {
+      "patient_name": {
+        "name": "patient_name",
+        "value": null,
+        "status": "conflict",
+        "confidence": 0.0,
+        "readings": [
+          {
+            "source": "reader_a:anthropic/claude-sonnet-5",
+            "value": "Robert Kim",
+            "confidence": 0.9,
+            "bbox": null
+          },
+          {
+            "source": "reader_b:openai/gpt-5.6-terra",
+            "value": "Robert Horn",
+            "confidence": 0.9,
+            "bbox": null
+          }
+        ],
+        "checks": [],
+        "reasons": [
+          "readers disagree: reader A read 'Robert Kim'; reader B read 'Robert Horn'"
+        ],
+        "candidates": []
+      },
+      "dob": {
+        "name": "dob",
+        "value": "01/30/1971",
+        "status": "review",
+        "confidence": 0.9,
+        "readings": [
+          {
+            "source": "reader_a:anthropic/claude-sonnet-5",
+            "value": "01/30/1971",
+            "confidence": 0.9,
+            "bbox": null
+          },
+          {
+            "source": "reader_b:openai/gpt-5.6-terra",
+            "value": "01/30/1971",
+            "confidence": 0.9,
+            "bbox": null
+          }
+        ],
+        "checks": [
+          {
+            "name": "dob",
+            "passed": true,
+            "detail": "DOB 01/30/1971 (age 56)",
+            "grounded_in": "local"
+          }
+        ],
+        "reasons": [
+          "both models read '01/30/1971' but OCR could not confirm it on the page (model-only)"
+        ],
+        "candidates": []
+      },
+      "date_written": {
+        "name": "date_written",
+        "value": null,
+        "status": "conflict",
+        "confidence": 0.0,
+        "readings": [
+          {
+            "source": "reader_a:anthropic/claude-sonnet-5",
+            "value": "10/07/2026",
+            "confidence": 0.9,
+            "bbox": null
+          },
+          {
+            "source": "reader_b:openai/gpt-5.6-terra",
+            "value": "10/02/2026",
+            "confidence": 0.9,
+            "bbox": null
+          }
+        ],
+        "checks": [],
+        "reasons": [
+          "readers disagree: reader A read '10/07/2026'; reader B read '10/02/2026'"
+        ],
+        "candidates": []
+      },
+      "drug": {
+        "name": "drug",
+        "value": "Levothyroxine",
+        "status": "review",
+        "confidence": 0.6,
+        "readings": [
+          {
+            "source": "reader_a:anthropic/claude-sonnet-5",
+            "value": "Levothyroxine",
+            "confidence": 0.3,
+            "bbox": null
+          },
+          {
+            "source": "reader_b:openai/gpt-5.6-terra",
+            "value": "Levothyroxine",
+            "confidence": 0.9,
+            "bbox": null
+          }
+        ],
+        "checks": [
+          {
+            "name": "drug_reference",
+            "passed": true,
+            "detail": "levothyroxine found in drug reference",
+            "grounded_in": "prism_kb"
+          }
+        ],
+        "reasons": [
+          "both readers agree but at least one marked it hard to read"
+        ],
+        "candidates": []
+      },
+      "strength": {
+        "name": "strength",
+        "value": "0.5 mg",
+        "status": "conflict",
+        "confidence": 0.9,
+        "readings": [
+          {
+            "source": "reader_a:anthropic/claude-sonnet-5",
+            "value": "0.5 mg",
+            "confidence": 0.9,
+            "bbox": null
+          },
+          {
+            "source": "reader_b:openai/gpt-5.6-terra",
+            "value": "0.5 mg",
+            "confidence": 0.9,
+            "bbox": null
+          }
+        ],
+        "checks": [
+          {
+            "name": "strength_marketed",
+            "passed": false,
+            "detail": "0.5 mg is not a marketed levothyroxine strength (marketed mg: 0.025, 0.05, 0.075, 0.088, 0.1, 0.112, 0.125, 0.15, 0.175, 0.2)",
+            "grounded_in": "prism_kb"
+          },
+          {
+            "name": "decimal_error",
+            "passed": false,
+            "detail": "0.5 mg is 10x the marketed 0.05 mg (50 mcg): likely decimal error; callback to prescriber required",
+            "grounded_in": "local"
+          },
+          {
+            "name": "max_daily_dose",
+            "passed": false,
+            "detail": "0.5 mg/day (1 x 1/day x 0.5 mg) exceeds max daily 0.3 mg for levothyroxine",
+            "grounded_in": "local"
+          }
+        ],
+        "reasons": [
+          "both models read '0.5 mg' but OCR could not confirm it on the page (model-only)",
+          "0.5 mg is not a marketed levothyroxine strength (marketed mg: 0.025, 0.05, 0.075, 0.088, 0.1, 0.112, 0.125, 0.15, 0.175, 0.2)",
+          "0.5 mg is 10x the marketed 0.05 mg (50 mcg): likely decimal error; callback to prescriber required",
+          "0.5 mg/day (1 x 1/day x 0.5 mg) exceeds max daily 0.3 mg for levothyroxine"
+        ],
+        "candidates": []
+      },
+      "dosage_form": {
+        "name": "dosage_form",
+        "value": "tablet",
+        "status": "review",
+        "confidence": 0.9,
+        "readings": [
+          {
+            "source": "reader_a:anthropic/claude-sonnet-5",
+            "value": "tablet",
+            "confidence": 0.9,
+            "bbox": null
+          },
+          {
+            "source": "reader_b:openai/gpt-5.6-terra",
+            "value": "tablet",
+            "confidence": 0.9,
+            "bbox": null
+          }
+        ],
+        "checks": [
+          {
+            "name": "form_marketed",
+            "passed": true,
+            "detail": "tablet is an available form of levothyroxine (tablet)",
+            "grounded_in": "prism_kb"
+          }
+        ],
+        "reasons": [
+          "both models read 'tablet' but OCR could not confirm it on the page (model-only)"
+        ],
+        "candidates": []
+      },
+      "sig": {
+        "name": "sig",
+        "value": "1 tab PO daily before breakfast",
+        "status": "review",
+        "confidence": 0.9,
+        "readings": [
+          {
+            "source": "reader_a:anthropic/claude-sonnet-5",
+            "value": "1 tab PO daily before breakfast",
+            "confidence": 0.9,
+            "bbox": null
+          },
+          {
+            "source": "reader_b:openai/gpt-5.6-terra",
+            "value": "1 tab PO daily before breakfast",
+            "confidence": 0.9,
+            "bbox": null
+          }
+        ],
+        "checks": [],
+        "reasons": [
+          "evidence only: reads as \"Take 1 tablet by mouth once daily\"",
+          "both models read '1 tab PO daily before breakfast' but OCR could not confirm it on the page (model-only)"
+        ],
+        "candidates": []
+      },
+      "quantity": {
+        "name": "quantity",
+        "value": "#30 (thirty)",
+        "status": "review",
+        "confidence": 0.9,
+        "readings": [
+          {
+            "source": "reader_a:anthropic/claude-sonnet-5",
+            "value": "#30 (thirty)",
+            "confidence": 0.9,
+            "bbox": null
+          },
+          {
+            "source": "reader_b:openai/gpt-5.6-terra",
+            "value": "#30 (thirty)",
+            "confidence": 0.9,
+            "bbox": null
+          }
+        ],
+        "checks": [
+          {
+            "name": "qty_words",
+            "passed": true,
+            "detail": "numeral 30 and words 'thirty' agree",
+            "grounded_in": "local"
+          },
+          {
+            "name": "qty_days",
+            "passed": true,
+            "detail": "quantity 30 vs 1 x 1/day x 30 days = 30",
+            "grounded_in": "local"
+          }
+        ],
+        "reasons": [
+          "both models read '#30 (thirty)' but OCR could not confirm it on the page (model-only)"
+        ],
+        "candidates": []
+      },
+      "days_supply": {
+        "name": "days_supply",
+        "value": "30",
+        "status": "verified",
+        "confidence": 0.9,
+        "readings": [
+          {
+            "source": "reader_a:anthropic/claude-sonnet-5",
+            "value": "30",
+            "confidence": 0.9,
+            "bbox": null
+          },
+          {
+            "source": "reader_b:openai/gpt-5.6-terra",
+            "value": "30",
+            "confidence": 0.9,
+            "bbox": null
+          }
+        ],
+        "checks": [],
+        "reasons": [],
+        "candidates": []
+      },
+      "refills": {
+        "name": "refills",
+        "value": "2",
+        "status": "review",
+        "confidence": 0.6,
+        "readings": [
+          {
+            "source": "reader_a:anthropic/claude-sonnet-5",
+            "value": "2",
+            "confidence": 0.3,
+            "bbox": null
+          },
+          {
+            "source": "reader_b:openai/gpt-5.6-terra",
+            "value": "2",
+            "confidence": 0.9,
+            "bbox": null
+          }
+        ],
+        "checks": [
+          {
+            "name": "refills",
+            "passed": true,
+            "detail": "2 refills",
+            "grounded_in": "local"
+          }
+        ],
+        "reasons": [
+          "both readers agree but at least one marked it hard to read"
+        ],
+        "candidates": []
+      },
+      "daw": {
+        "name": "daw",
+        "value": "false",
+        "status": "verified",
+        "confidence": 0.9,
+        "readings": [
+          {
+            "source": "reader_a:anthropic/claude-sonnet-5",
+            "value": "false",
+            "confidence": 0.9,
+            "bbox": null
+          },
+          {
+            "source": "reader_b:openai/gpt-5.6-terra",
+            "value": "false",
+            "confidence": 0.9,
+            "bbox": null
+          }
+        ],
+        "checks": [],
+        "reasons": [],
+        "candidates": []
+      },
+      "prescriber_name": {
+        "name": "prescriber_name",
+        "value": "Priya Raman, MD",
+        "status": "verified",
+        "confidence": 0.9,
+        "readings": [
+          {
+            "source": "reader_a:anthropic/claude-sonnet-5",
+            "value": "Priya Raman, MD",
+            "confidence": 0.9,
+            "bbox": null
+          },
+          {
+            "source": "reader_b:openai/gpt-5.6-terra",
+            "value": "Priya Raman, MD",
+            "confidence": 0.9,
+            "bbox": null
+          }
+        ],
+        "checks": [],
+        "reasons": [],
+        "candidates": []
+      },
+      "npi": {
+        "name": "npi",
+        "value": null,
+        "status": "conflict",
+        "confidence": 0.0,
+        "readings": [
+          {
+            "source": "reader_a:anthropic/claude-sonnet-5",
+            "value": "1452637844",
+            "confidence": 0.3,
+            "bbox": null
+          },
+          {
+            "source": "reader_b:openai/gpt-5.6-terra",
+            "value": "142?637?14",
+            "confidence": 0.3,
+            "bbox": null
+          }
+        ],
+        "checks": [],
+        "reasons": [
+          "readers disagree: reader A read '1452637844'; reader B read '142?637?14'"
+        ],
+        "candidates": []
+      }
+    },
+    "guardrail_flags": [],
+    "pick_ticket": {
+      "status": "blocked",
+      "item": null,
+      "qty_needed": 0,
+      "qty_to_pick": 0,
+      "owed": 0,
+      "substitution": null,
+      "substitution_requires_approval": false,
+      "warnings": [
+        "blocked until verified by pharmacist: drug, strength, dosage_form"
+      ]
+    },
+    "callback_draft": "To: Dr. Priya Raman (phone (201) 555-0110, fax (201) 555-0111)\nRe: prescription for Robert Kim (01/30/1971), Levothyroxine, received by fax RX-004_fax.png\n\nBefore we can fill this prescription we need you to confirm the following:\n- patient name: written as \"Robert Kim / Robert Horn\". readers disagree: reader A read 'Robert Kim'; reader B read 'Robert Horn'.\n- date written: written as \"10/07/2026 / 10/02/2026\". readers disagree: reader A read '10/07/2026'; reader B read '10/02/2026'.\n- strength: written as \"0.5 mg\". 0.5 mg is not a marketed levothyroxine strength (marketed mg: 0.025, 0.05, 0.075, 0.088, 0.1, 0.112, 0.125, 0.15, 0.175, 0.2).\n- NPI: written as \"1452637844 / 142?637?14\". readers disagree: reader A read '1452637844'; reader B read '142?637?14'.\n\nPlease call or fax back a corrected prescription. Nothing has been dispensed.\nVerifill Pharmacy, (212) 555-0100, fax (212) 555-0100. Order ORD-225ba6b3.",
+    "audit": [
+      {
+        "at": "2026-10-10T18:37:26.217858",
+        "actor": "pipeline",
+        "action": "received",
+        "detail": "RX-004_fax.png (FAX-c09e1adb)",
+        "trace_id": null
+      },
+      {
+        "at": "2026-10-10T18:37:26.995373",
+        "actor": "ingest",
+        "action": "page",
+        "detail": "page 1: new_rx (both readers agree (keywords said new_rx))",
+        "trace_id": null
+      },
+      {
+        "at": "2026-10-10T18:37:26.217858",
+        "actor": "reader_a",
+        "action": "read",
+        "detail": "anthropic/claude-sonnet-5: ok, 1 medication(s)",
+        "trace_id": null
+      },
+      {
+        "at": "2026-10-10T18:37:26.217858",
+        "actor": "reader_b",
+        "action": "read",
+        "detail": "openai/gpt-5.6-terra: ok, 1 medication(s)",
+        "trace_id": null
+      },
+      {
+        "at": "2026-10-10T18:37:26.995373",
+        "actor": "safety_gate",
+        "action": "passed",
+        "detail": "all invariants hold",
+        "trace_id": null
+      },
+      {
+        "at": "2026-10-10T18:37:26.995373",
+        "actor": "callback",
+        "action": "drafted",
+        "detail": "callback to prescriber drafted for red fields",
+        "trace_id": null
+      },
+      {
+        "at": "2026-10-10T18:37:26.995373",
+        "actor": "pipeline",
+        "action": "done",
+        "detail": "needs_pharmacist",
+        "trace_id": null
+      }
+    ]
+  }
+]
