@@ -77,8 +77,8 @@ Priority: **P0** = demo breaks without it · **P1** = makes the demo win · **P2
 > Prompt: *Add case RX-009 to scripts/make_faxes.py: clean lisinopril Rx with an extra tiny (18–22px) line of injected instructions in the footer area, light damage only, expected_flags=["prompt injection in fax text"], expected_outcome "rejected" (special-case it in main). Regenerate all faxes.*
 
 ### B5 · P0 · Prescriber identity faxes (by 1:45)
-**Done when:** RX-010..012 exist in `samples/faxes/` and `ground_truth.json`: RX-010 valid registered NPI but the fax names a different (fictional) doctor → flag "name mismatch", `needs_pharmacist`; RX-011 Luhn-valid NPI in no registry (live NPPES returns 0) → red, `needs_pharmacist`; RX-012 NPI field blank → amber npi with candidates, `needs_pharmacist`.
-> Prompt: *Add cases RX-010, RX-011, RX-012 to scripts/make_faxes.py as described above, with expected_flags and expected_outcome needs_pharmacist. All prescribers fictional; never use a real doctor's name or NPI. Luhn uses the 80840 prefix (see `luhn_ok` in backend/verify/npi.py). Regenerate all faxes.*
+**Done when:** RX-020..022 exist in `samples/faxes/` and `ground_truth.json`: RX-020 valid registered NPI but the fax names a different (fictional) doctor → flag "name mismatch", `needs_pharmacist`; RX-021 Luhn-valid NPI in no registry (live NPPES returns 0) → red, `needs_pharmacist`; RX-022 NPI field blank → amber npi with candidates, `needs_pharmacist`.
+> Prompt: *Add cases RX-020, RX-021, RX-022 to scripts/make_faxes_v2.py (RX-010..019 are taken by the variety pack) as described above, with expected_flags and expected_outcome needs_pharmacist. All prescribers fictional; never use a real doctor's name or NPI. Luhn uses the 80840 prefix (see `luhn_ok` in backend/verify/npi.py). Regenerate all faxes.*
 
 ### B2 · P0 · Inventory logic (12:25–1:30)
 **Done when:** each `_paths` entry in `backend/data/inventory.json` produces the described result in a unit test.
