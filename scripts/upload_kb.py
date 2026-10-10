@@ -38,7 +38,7 @@ if __name__ == "__main__":
     pt = tracing.client()
     if pt is None:
         raise SystemExit("PRISM not configured: fill PRISMTRACE_* in .env")
-    existing = {d.get("filename") for d in (pt.kb_list_documents() or [])}
+    existing = {d.get("name") for d in (pt.kb_list_documents() or [])}
     n = 0
     for fname, text in docs():
         if fname in existing:

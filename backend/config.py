@@ -2,6 +2,15 @@
 import os
 from pathlib import Path
 
+# Use the OS certificate store for TLS. On machines with HTTPS-scanning antivirus
+# (e.g. Norton Web Shield) the intercepting root CA is only in the Windows store,
+# so certifi-based verification fails for every outbound call.
+try:
+    import truststore
+    truststore.inject_into_ssl()
+except ImportError:
+    pass
+
 try:
     from dotenv import load_dotenv
     load_dotenv()

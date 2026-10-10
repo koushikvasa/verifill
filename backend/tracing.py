@@ -45,7 +45,9 @@ def trace(step: str, session_id: str, model: str, input_obj, output_obj, latency
     """Record one stage. Returns a trace id for the audit trail."""
     trace_id = str(uuid.uuid4())
     _steps.setdefault(session_id, []).append(
-        {"name": step, "input": _s(input_obj)[:4000], "output": _s(output_obj)[:4000], "latency_ms": latency_ms})
+        {"step_type": "tool_call", "label": step, "tool_name": f"{config.AGENT_PREFIX}-{step}",
+         "input_summary": _s(input_obj)[:4000], "output_summary": _s(output_obj)[:4000],
+         "duration_ms": latency_ms, "status": "success"})
     pt = client()
     if pt is None:
         return trace_id
@@ -72,16 +74,21 @@ def step(name: str, session_id: str, model: str = "", input_obj=None):
                                 int((time.perf_counter() - t0) * 1000), box["metadata"])
 
 
-def submit_order(session_id: str, final_status: str) -> dict | None:
+def submit_order(session_id: str, final_status: str, summary: str = "",
+                 async_send: bool = True) -> dict | None:
     """Send the whole order run as one trajectory so PRISM's Evaluator scores it.
-    Call once at the end of pipeline.run(). final_status: "success" | "failure"."""
+    Call once at the end of pipeline.run(). final_status: "success" | "failure".
+    summary: the order outcome (e.g. status + flagged fields), recorded as the final step."""
     steps = _steps.pop(session_id, [])
     pt = client()
     if pt is None or not steps:
         return None
+    steps.append({"step_type": "final_answer", "label": "order outcome",
+                  "output_summary": summary or final_status, "status": "success"})
     try:
         return pt.submit_trajectory(steps, agent_name=f"{config.AGENT_PREFIX}-pipeline",
-                                    conversation_id=session_id, final_status=final_status, async_send=True)
+                                    conversation_id=session_id, final_status=final_status,
+                                    async_send=async_send)
     except Exception:
         return None
 
@@ -122,9 +129,9 @@ if __name__ == "__main__":
         raise SystemExit("Set PRISMTRACE_API_KEY and PRISMTRACE_PROJECT_ID in .env first")
     sid = f"smoke-{uuid.uuid4().hex[:6]}"
     print("trace id:", trace("smoke", sid, "none", "verifill smoke test", {"ok": True}, 1))
-    print("trajectory:", submit_order(sid, "success"))
+    print("trajectory:", submit_order(sid, "success", "smoke ok", async_send=False))
     flush()
     try:
-        print("kb documents:", [d.get("filename") for d in client().kb_list_documents()])
+        print("kb documents:", [d.get("name") for d in client().kb_list_documents()])
     except Exception as e:
         print("kb list failed:", e)
