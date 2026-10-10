@@ -72,7 +72,7 @@ def run(fax_path: Path) -> Order:
         from backend import verify
         if hasattr(verify, "run_all"):
             with tracing.step("verify", order.id, input_obj=_values(order)) as t:
-                verify.run_all(order)
+                verify.run_all(order, ocr_text)
                 t["output"] = {f.value: [c.model_dump() for c in ef.checks] for f, ef in order.fields.items() if ef.checks}
     except Exception as e:  # noqa: BLE001
         failures.append(f"verification failed: {e}")

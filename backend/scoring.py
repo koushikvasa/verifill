@@ -29,6 +29,7 @@ from backend.models import CRITICAL_FIELDS, ExtractedField, FieldName, Order, Or
 EXACT = {FieldName.dob, FieldName.date_written, FieldName.drug, FieldName.strength, FieldName.dosage_form,
          FieldName.sig, FieldName.quantity, FieldName.days_supply, FieldName.refills, FieldName.daw,
          FieldName.npi}
+KEEP_PREFIXES = ("reader ", "unverified: ", "evidence only: ", "suggestion: ")
 GROUND_RATIO = 80        # OCR is noisy on handwriting: ~80% character similarity counts as "seen"
 _WORD_NUMS = r"\((?:[a-z -]+)\)"   # "(thirty)" spelled-out quantity
 
@@ -77,7 +78,8 @@ def score_field(f: ExtractedField, ocr_text: str = "") -> ExtractedField:
     A pharmacist-confirmed field is never re-colored."""
     if f.status == Status.confirmed:
         return f
-    reasons: list[str] = [r for r in f.reasons if r.startswith("reader ")]   # keep reader-error notes
+    # keep notes from earlier stages: reader errors, verify notes ("unverified: " caps at amber)
+    reasons: list[str] = [r for r in f.reasons if r.startswith(KEEP_PREFIXES)]
     ocr = next((r for r in f.readings if r.source == "ocr"), None)
     llm = [r for r in f.readings if r.source != "ocr"]
     llm_read = [r for r in llm if r.value is not None]
@@ -134,12 +136,14 @@ def score_field(f: ExtractedField, ocr_text: str = "") -> ExtractedField:
     if failed:
         status = Status.conflict
         reasons += [c.detail for c in failed]
-    if f.candidates and status != Status.conflict:
+    if any(r.startswith("unverified: ") for r in reasons) and status == Status.verified:
+        status = Status.review
+    if f.candidates and f.name == FieldName.drug and status != Status.conflict:
         status = Status.conflict
         reasons.append("look-alike candidates: " + ", ".join(f.candidates) + " (pharmacist must choose)")
 
     f.value, f.status, f.confidence = value, status, round(conf, 3)
-    f.reasons = list(dict.fromkeys(reasons)) if status != Status.verified else []
+    f.reasons = list(dict.fromkeys(reasons)) if status != Status.verified else         [r for r in reasons if r.startswith("evidence only: ")]
     if status != Status.verified and not f.reasons:
         f.reasons = ["needs review"]   # invariant: every amber/red field has a reason
     return f
