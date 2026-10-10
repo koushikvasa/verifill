@@ -155,22 +155,23 @@ def test_lasa_clean_read_of_pair_member_passes():
 # ---------- end to end (live readers, opt-in) ----------
 
 @pytest.mark.skipif(os.getenv("RUN_LIVE") != "1", reason="calls vision models; set RUN_LIVE=1")
-def test_live_only_rx001_ready_and_no_false_ready():
+def test_live_no_false_ready_and_invariants_hold():
+    """Every sample fax: invariants hold, and nothing is ready_to_fill unless ground truth says so."""
     from backend import pipeline
     gt = json.loads((config.SAMPLES_DIR / "ground_truth.json").read_text())
     cases = gt if isinstance(gt, list) else list(gt.values())
     false_ready = []
     for c in cases:
-        o = pipeline.run(config.SAMPLES_DIR / c["file"])
-        assert safety.violations(o) == [], c["id"]
-        if o.status == OrderStatus.ready_to_fill and c["expected_outcome"] != "ready_to_fill":
-            false_ready.append(c["id"])
-        if c["expected_outcome"] == "rejected":
-            assert o.status == OrderStatus.rejected, c["id"]
-        for ef in o.fields.values():
-            assert ef.status in (Status.verified, Status.confirmed) or ef.reasons, (c["id"], ef.name)
-        if o.status == OrderStatus.ready_to_fill:
-            assert all(o.fields[f].status == Status.verified for f in CRITICAL_FIELDS)
+        for o in pipeline.run_fax(config.SAMPLES_DIR / c["file"]):
+            assert safety.violations(o) == [], c["id"]
+            if o.status == OrderStatus.ready_to_fill and c["expected_outcome"] != "ready_to_fill":
+                false_ready.append(c["id"])
+            if c["expected_outcome"] in ("rejected", "not_prescription", "denied_by_prescriber"):
+                assert o.status.value == c["expected_outcome"], c["id"]
+            for ef in o.fields.values():
+                assert ef.status in (Status.verified, Status.confirmed) or ef.reasons, (c["id"], ef.name)
+            if o.status == OrderStatus.ready_to_fill:
+                assert all(o.fields[f].status in (Status.verified, Status.confirmed) for f in CRITICAL_FIELDS)
     assert false_ready == []
 
 
@@ -184,3 +185,16 @@ def test_confirmed_value_that_later_fails_a_check_reopens():
     ef2.checks.append(Check(name="decimal_error", passed=False, detail="10x marketed"))
     ef2.reasons.append("pharmacist override by J: prescriber confirmed by phone")
     assert scoring.score_field(ef2).status == Status.confirmed
+
+
+def test_schedule_ii_by_fax_never_passes():
+    assert not rules.controlled_schedule("oxycodone").passed
+
+
+def test_page_classifier_never_drops_on_disagreement():
+    from types import SimpleNamespace as NS
+    from backend import pipeline
+    kind, _ = pipeline._page_type("laboratory results reference range", [NS(page_type="other"), NS(page_type="new_rx")])
+    assert kind.value == "new_rx"
+    kind, _ = pipeline._page_type("laboratory results reference range", [NS(page_type="other"), NS(page_type="other")])
+    assert kind.value == "other"

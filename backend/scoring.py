@@ -45,7 +45,9 @@ def normalize(field: FieldName, v: str | None) -> str | None:
                 "unchecked": "false"}.get(s, s)
     if field in (FieldName.quantity, FieldName.days_supply, FieldName.refills):
         s = re.sub(_WORD_NUMS, "", s).lstrip("#").strip()
-        s = re.sub(r"\s*(tabs?|tablets?|caps?|capsules?|days?)$", "", s).strip()
+        s = re.sub(r"\s*(tabs?|tablets?|caps?|capsules?|days?)(\(s\))?$", "", s).strip()
+    if field == FieldName.dosage_form:
+        s = re.sub(r"^oral\s+", "", s).rstrip("s").replace("(", "").replace(")", "")
     if field == FieldName.npi:
         s = re.sub(r"\D", "", s)
     if field == FieldName.strength:

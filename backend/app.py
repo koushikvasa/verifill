@@ -2,6 +2,7 @@
 Lane: Backend
 API for the review UI.  Run: uvicorn backend.app:app --reload
 """
+import io
 import json
 import shutil
 import tempfile
@@ -9,7 +10,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse, Response
 from pydantic import BaseModel, Field
 
 from backend import config, pipeline
@@ -45,20 +46,51 @@ def sample_image(name: str):
     return FileResponse(p)
 
 
+def _sample_path(fax_id: str) -> Path:
+    hits = sorted(config.SAMPLES_DIR.glob(f"{Path(fax_id).name}_fax.*"))
+    if not hits:
+        raise HTTPException(404, "unknown sample")
+    return hits[0]
+
+
+def _save_upload(file: UploadFile) -> Path:
+    tmp = Path(tempfile.mkdtemp()) / Path(file.filename or "fax.png").name
+    with tmp.open("wb") as f:
+        shutil.copyfileobj(file.file, f)
+    return tmp
+
+
+@app.post("/faxes/sample/{fax_id}", response_model=list[Order])
+def fax_from_sample(fax_id: str):
+    """Any fax -> every order on it (multi-drug pages give several; cover pages are skipped)."""
+    return _run_fax(_sample_path(fax_id))
+
+
+@app.post("/faxes/upload", response_model=list[Order])
+def fax_from_upload(file: UploadFile):
+    return _run_fax(_save_upload(file))
+
+
 @app.post("/orders/sample/{fax_id}", response_model=Order)
 def order_from_sample(fax_id: str):
-    p = config.SAMPLES_DIR / f"{fax_id}_fax.png"
-    if not p.exists():
-        raise HTTPException(404, "unknown sample")
-    return _run(p)
+    """Backwards-compatible: first order of the fax. Use /faxes/sample/{id} for all of them."""
+    return _run_fax(_sample_path(fax_id))[0]
 
 
 @app.post("/orders/upload", response_model=Order)
 def order_from_upload(file: UploadFile):
-    tmp = Path(tempfile.mkdtemp()) / Path(file.filename or "fax.png").name
-    with tmp.open("wb") as f:
-        shutil.copyfileobj(file.file, f)
-    return _run(tmp)
+    return _run_fax(_save_upload(file))[0]
+
+
+@app.get("/orders/{order_id}/page.png")
+def order_page(order_id: str):
+    """The cleaned page the readers saw (rotated/dewarped); readings[].bbox refer to this image."""
+    img = pipeline.PAGE_IMAGES.get(order_id)
+    if img is None:
+        raise HTTPException(404)
+    buf = io.BytesIO()
+    img.save(buf, "PNG")
+    return Response(buf.getvalue(), media_type="image/png")
 
 
 @app.get("/orders/{order_id}", response_model=Order)
@@ -103,10 +135,8 @@ def scan(order_id: str, body: Scan):
     raise HTTPException(501, "not implemented yet")
 
 
-def _run(path: Path) -> Order:
-    try:
-        order = pipeline.run(path)
-    except NotImplementedError as e:
-        raise HTTPException(501, str(e))
-    ORDERS[order.id] = order
-    return order
+def _run_fax(path: Path) -> list[Order]:
+    orders = pipeline.run_fax(path)
+    for o in orders:
+        ORDERS[o.id] = o
+    return orders

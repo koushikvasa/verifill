@@ -9,6 +9,7 @@ All deterministic; each returns a Check (or None when its inputs aren't availabl
 - qty_words: "#30 (thirty)" numeral and words agree
 - dates: date_written not in the future and not > 1 year old; DOB plausible
 - refills: <= 11 (a non-controlled Rx is valid for a year)
+- controlled_schedule: Schedule II by fax -> pharmacist decides (never auto-fill)
 """
 import re
 from datetime import date, datetime
@@ -137,3 +138,18 @@ def refills(s: str) -> Check | None:
     ok = n <= 11
     return Check(name="refills", passed=ok, grounded_in="local",
                  detail=f"{n} refills" + ("" if ok else " exceeds the 1-year limit (11)"))
+
+
+def controlled_schedule(drug: str) -> Check | None:
+    """Schedule II by fax generally needs the original or an e-Rx (narrow exemptions, e.g. hospice,
+    LTCF, compounded infusions). The pharmacist decides; we never auto-fill it."""
+    c = canonical(drug)
+    sched = DRUGS["drugs"].get(c, {}).get("schedule") if c else None
+    if not sched:
+        return None
+    if sched == "CII":
+        return Check(name="controlled_schedule", passed=False, grounded_in="local",
+                     detail=f"{c} is Schedule II: a faxed Rx generally needs the original or an e-prescription; "
+                            f"pharmacist must decide (and check the PDMP)")
+    return Check(name="controlled_schedule", passed=True, grounded_in="local",
+                 detail=f"{c} is Schedule {sched[1:]}: fax allowed; check the PDMP and refill limits")

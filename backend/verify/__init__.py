@@ -56,6 +56,7 @@ def run_all(order: Order, ocr_text: str = "") -> None:
     drug = val[F.drug] if rxnorm.canonical(val[F.drug]) else None
     if val[F.drug] and "?" not in val[F.drug] and not cands:
         add(F.drug, rxnorm.drug_exists(val[F.drug]))
+        add(F.drug, rules.controlled_schedule(val[F.drug]))
 
     # --- strength / form / dose: only meaningful once the drug is identified ---
     if drug:
