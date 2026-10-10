@@ -61,3 +61,10 @@ Contract between lanes = `backend/models.py`. Don't change it without telling th
 - Inventory never resolves an ambiguous drug.
 - No order is ready_to_fill unless every critical field is green.
 - Every color has a visible reason.
+
+## Live judge testing (organizers upload their own faxes)
+- **Print 5 copies of `samples/robustness/blank_rx_pad.pdf`.** Hand judges a pen: "Write any prescription, as badly as you like." Snap a phone photo, upload, show the result in ~10 s. This is the strongest possible demo of "trust."
+- Pitch line when something comes back amber: *"It isn't sure, so it's asking the pharmacist. That's the feature."*
+- Have the test kit ready to show: blank page, noise, injection, duplicate, tiny image all fail safe.
+- Never claim it reads everything. Claim it **never fills what it can't verify**, and show the 0 false ready-to-fill number.
+- If a judge uploads a real prescription with real patient data: it's processed in memory and not stored; hit "Clear all" afterwards.
