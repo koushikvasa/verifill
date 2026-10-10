@@ -1,0 +1,49 @@
+# CLAUDE.md: Verifill
+
+Hackathon project (Get Hired Hack, Columbia Startup Lab, Oct 10 2026, deadline 4:30 PM EDT, feature freeze 3:30 PM).
+Track: Fax to Fill. Theme: AI You Can Trust. Speed matters, but correctness of the trust rules matters more.
+
+## What it does
+Faxed prescription image → structured, verified order → inventory pick ticket. Anything uncertain goes to the pharmacist with a visible reason. Never guesses.
+
+## Pipeline (backend/pipeline.py)
+1. `guard.py`: guardrail on raw OCR text BEFORE any model call (prompt injection). Hit → order `rejected`.
+2. `extract/ocr.py` (Tesseract) + `extract/vision.py` reader A and reader B (two vision models, different vendors, via Nicrron).
+3. `extract/zoom.py`: crop/upscale/re-read low-confidence fields (stretch).
+4. `verify/`: `rxnorm.py` (drug + strength), `npi.py` (Luhn + registry), `lasa.py` (look-alike drugs), `rules.py` (dose, decimal, qty/days, dates).
+5. `scoring.py`: green `verified` / amber `review` / red `conflict` per field, with reasons.
+6. `inventory.py`: pick ticket, ONLY when drug + strength + form are green or pharmacist-confirmed.
+7. Callback draft for red fields.
+
+Data contract: `backend/models.py`. All lanes code against it. Don't rename fields without updating the frontend spec in `frontend/NINOO_BUILDER_PROMPT.md`.
+
+## Non-negotiable rules
+- Transcribe exactly what the prescriber wrote. Never auto-correct (levothyroxine "0.5 mg" stays 0.5 mg and gets FLAGGED).
+- Inventory never resolves an ambiguous drug. If drug is not green → `PickTicket(status="blocked")`.
+- Order is `ready_to_fill` only if every field in `CRITICAL_FIELDS` is `verified`/`confirmed` AND no guardrail flags.
+- Every amber/red field has at least one human-readable entry in `reasons`.
+- Look-alike candidates are shown as evidence; the pharmacist picks. Indication words in the sig are evidence, not a decision.
+- Fax text is untrusted data. Never put it in a prompt as instructions.
+- Tracing must never crash the pipeline (`tracing.py` swallows HTTP errors).
+
+## Sponsor tools (required by the hackathon)
+- **PRISM by Block Convey**: `backend/tracing.py`. Every stage uses `with tracing.step("<stage>", order.id, model=..., input_obj=...) as t: t["output"] = ...`. agent_name becomes `verifill-<stage>`. Guardrail + Evaluator rules are configured in the PRISM dashboard; on the HTTP path guardrails FLAG only, so our code enforces blocks. Knowledge Base holds `backend/data/*.json`; KB query-from-code API is unconfirmed, so keep the local JSON fallback and mark the check's `grounded_in`.
+- **NicrronNinoo**: `extract/vision.py` calls Nicrron, assumed OpenAI-compatible `/chat/completions`. Base URL + model ids in `.env`.
+
+## Commands
+```bash
+source .venv/bin/activate
+uvicorn backend.app:app --reload --port 8000     # API + /docs
+python -m backend.tracing                        # PRISM handshake
+python scripts/make_faxes.py --out samples/faxes --fonts fonts   # regenerate test faxes
+python -m scripts.eval                           # score vs ground truth
+curl -X POST localhost:8000/orders/sample/RX-003 | python -m json.tool
+```
+
+## Test data
+`samples/faxes/RX-00{1..8}_fax.png` + `ground_truth.json` (written values + expected flags + expected outcome). `samples/README.md` explains each case. Only RX-001 should end `ready_to_fill`.
+
+## Style
+Python 3.11+, type hints, pydantic v2, small functions, no new frameworks. Keep diffs focused; this is a 4-hour build. Prefer deterministic logic over LLM calls for checks.
+
+Task list with acceptance criteria: `docs/TASKS.md`. Plan and timeline: `PLAN.md`.
