@@ -8,8 +8,14 @@ Backend: FastAPI at `http://localhost:8000` (make the base URL a config constant
 - `POST /faxes/sample/{id}` → runs the pipeline on one fax, returns a **list** of Orders (a fax can hold several drugs, or none)
 - `POST /orders/sample/{id}` → same, first Order only (legacy)
 - `POST /orders/upload` (multipart `file`) → Order
-- `POST /orders/{order_id}/resolve` body `{field, value, pharmacist}` → updated Order
-- `POST /orders/{order_id}/scan` body `{ndc}` → `{match: bool, detail}`
+- `POST /orders/{order_id}/resolve` body `{field, value, pharmacist, override_reason?}` → updated Order. `pharmacist` is required (422 without it). If the value still fails a check the API answers **409** with `{detail: {message, failed_checks: [...]}}`; show the failed checks and ask for a typed reason, then resend with `override_reason`.
+- `POST /orders/{order_id}/scan` body `{ndc}` → `{match: bool, detail}` (detail starts with "WRONG PRODUCT" on a mismatch: show it loud)
+- `POST /faxes/sample/{id}` and `POST /faxes/upload` → **list of Orders** (one fax can hold several drugs; they share `fax_id`). Prefer these over the single-order `/orders/...` forms. Accepted uploads: png/jpg/webp/pdf/tif/tiff, ≤ 25 MB (400 otherwise).
+- `GET /orders/{order_id}/page.png` → the cleaned page the readers saw (rotated/dewarped). **Draw `readings[].bbox` on this image**, not on the original sample file.
+- `POST /orders/clear` → forgets every order held in memory (the "Clear all" button for judge uploads)
+- Order statuses: `ready_to_fill | needs_pharmacist | rejected | not_prescription | denied_by_prescriber`. Order also carries `fax_id`, `page`, `fax_type` (`new_rx | refill_authorization | cover_sheet | other`), `orientation_fixed` (degrees).
+- Reasons prefixed `evidence only:` / `suggestion:` are informational (show in grey); `unverified:` explains an amber; everything else explains a red.
+- Real responses to build against: `frontend/mock/*.json` (RX-001 green, RX-003 before/after resolve, RX-004 with callback + the 409, RX-009 rejected, RX-011 three orders, RX-016 denied, RX-018 not a prescription, RX-008 worst case, scan ok/wrong).
 
 Order shape: `{id, fax_file, fax_id, page, fax_type: "new_rx"|"refill_authorization"|"cover_sheet"|"other", orientation_fixed, status: "ready_to_fill"|"needs_pharmacist"|"rejected"|"not_prescription"|"denied_by_prescriber", guardrail_flags: string[], fields: {<name>: {name, value, status: "verified"|"review"|"conflict"|"confirmed", confidence, reasons: string[], candidates: string[], readings: [{source, value, confidence, bbox}], checks: [{name, passed, detail, grounded_in}]}}, pick_ticket: {status: "in_stock"|"partial"|"out_of_stock"|"blocked", item: {ndc, drug, strength, manufacturer, lot, expiry, aisle, shelf, bin}, qty_needed, qty_to_pick, owed, substitution, substitution_requires_approval, warnings: string[]}, callback_draft, audit: [{at, actor, action, detail, trace_id}]}`
 

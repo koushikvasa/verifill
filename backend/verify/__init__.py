@@ -64,7 +64,12 @@ def run_all(order: Order, ocr_text: str = "") -> None:
     if val[F.drug] and "?" not in val[F.drug] and not cands:
         add(F.drug, rxnorm.drug_exists(val[F.drug], val[F.strength]))
         add(F.drug, rules.controlled_schedule(val[F.drug]))
-        if drug is None and fx[F.drug].checks and fx[F.drug].checks[0].grounded_in == "rxnav":   # known only to RxNav
+        ref = next((c for c in fx[F.drug].checks if c.name == "drug_reference"), None)
+        if drug is None and ref is not None and ref.passed and ref.grounded_in == "rxnav":   # known only to RxNav
+            # "not in our reference" is no longer a failure: RxNav vouches for the product. Amber, not red.
+            fx[F.drug].checks = [c for c in fx[F.drug].checks if not (c.name == "lasa" and not c.passed)]
+            note(F.drug, "unverified: " + val[F.drug] + " is not in our local reference (no look-alike list or dose "
+                         "limits on file); RxNav confirms the product exists; pharmacist to verify")
             for f in (F.strength, F.dosage_form):
                 note(f, "unverified: " + val[F.drug] + " is not in our reference; RxNav confirms the product exists "
                         "but no grounded maximum daily dose or form list is available; pharmacist to check")

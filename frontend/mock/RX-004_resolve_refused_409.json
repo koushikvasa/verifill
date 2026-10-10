@@ -1,0 +1,13 @@
+{
+  "http_status": 409,
+  "body": {
+    "detail": {
+      "message": "value still fails checks; add override_reason to confirm anyway",
+      "failed_checks": [
+        "0.5 mg is not a marketed levothyroxine strength (marketed mg: 0.025, 0.05, 0.075, 0.088, 0.1, 0.112, 0.125, 0.15, 0.175, 0.2)",
+        "0.5 mg is 10x the marketed 0.05 mg (50 mcg): likely decimal error; callback to prescriber required",
+        "0.5 mg/day (1 x 1/day x 0.5 mg) exceeds max daily 0.3 mg for levothyroxine"
+      ]
+    }
+  }
+}

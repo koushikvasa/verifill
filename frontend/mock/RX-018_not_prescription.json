@@ -1,0 +1,49 @@
+[
+  {
+    "id": "ORD-5d878610",
+    "fax_file": "RX-018_fax.png",
+    "fax_id": "FAX-89db6153",
+    "page": 1,
+    "fax_type": "other",
+    "orientation_fixed": 0,
+    "status": "not_prescription",
+    "fields": {},
+    "guardrail_flags": [],
+    "pick_ticket": {
+      "status": "blocked",
+      "item": null,
+      "qty_needed": 0,
+      "qty_to_pick": 0,
+      "owed": 0,
+      "substitution": null,
+      "substitution_requires_approval": false,
+      "warnings": [
+        "no prescription on this fax"
+      ]
+    },
+    "callback_draft": null,
+    "audit": [
+      {
+        "at": "2026-10-10T18:38:00.843340",
+        "actor": "pipeline",
+        "action": "received",
+        "detail": "RX-018_fax.png (FAX-89db6153)",
+        "trace_id": null
+      },
+      {
+        "at": "2026-10-10T18:38:00.843340",
+        "actor": "ingest",
+        "action": "page",
+        "detail": "page 1: other (keywords and both readers agree)",
+        "trace_id": null
+      },
+      {
+        "at": "2026-10-10T18:38:00.843340",
+        "actor": "classify",
+        "action": "filed",
+        "detail": "not a prescription (page 1): filed, no order created",
+        "trace_id": null
+      }
+    ]
+  }
+]
