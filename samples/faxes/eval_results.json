@@ -1,0 +1,365 @@
+{
+  "summary": {
+    "faxes": 19,
+    "auto_accept_precision": 1.0,
+    "coverage": 0.7085,
+    "flag_recall": 0.8077,
+    "outcome_accuracy": 0.9474,
+    "false_ready_to_fill": 0,
+    "green_fields": 175,
+    "green_correct": 175,
+    "fields": 247,
+    "flags_expected": 26,
+    "flags_raised": 21
+  },
+  "faxes": [
+    {
+      "id": "RX-001",
+      "kind": "pad",
+      "expected": "ready_to_fill",
+      "got": [
+        "ready_to_fill"
+      ],
+      "outcome_ok": true,
+      "green": 13,
+      "green_correct": 13,
+      "fields": 13,
+      "wrong_green": [],
+      "flags": {},
+      "false_ready": [],
+      "seconds": 42.5
+    },
+    {
+      "id": "RX-002",
+      "kind": "pad",
+      "expected": "needs_pharmacist",
+      "got": [
+        "needs_pharmacist"
+      ],
+      "outcome_ok": true,
+      "green": 2,
+      "green_correct": 2,
+      "fields": 13,
+      "wrong_green": [],
+      "flags": {
+        "low OCR confidence across handwriting": true
+      },
+      "false_ready": [],
+      "seconds": 53.3
+    },
+    {
+      "id": "RX-003",
+      "kind": "pad",
+      "expected": "needs_pharmacist",
+      "got": [
+        "needs_pharmacist"
+      ],
+      "outcome_ok": true,
+      "green": 8,
+      "green_correct": 8,
+      "fields": 13,
+      "wrong_green": [],
+      "flags": {
+        "drug name partly obscured": true,
+        "look-alike risk: hydroxyzine vs hydralazine": true,
+        "indication 'itching' supports hydroxyzine; confirm with prescriber or pharmacist": true
+      },
+      "false_ready": [],
+      "seconds": 26.8
+    },
+    {
+      "id": "RX-004",
+      "kind": "pad",
+      "expected": "needs_pharmacist",
+      "got": [
+        "needs_pharmacist"
+      ],
+      "outcome_ok": true,
+      "green": 3,
+      "green_correct": 3,
+      "fields": 13,
+      "wrong_green": [],
+      "flags": {
+        "dose 0.5 mg exceeds max daily 0.3 mg; likely decimal error for 0.05 mg (50 mcg)": true,
+        "0.5 mg is not a marketed levothyroxine strength": true,
+        "callback to prescriber required": true
+      },
+      "false_ready": [],
+      "seconds": 38.6
+    },
+    {
+      "id": "RX-005",
+      "kind": "pad",
+      "expected": "needs_pharmacist",
+      "got": [
+        "needs_pharmacist"
+      ],
+      "outcome_ok": true,
+      "green": 10,
+      "green_correct": 10,
+      "fields": 13,
+      "wrong_green": [],
+      "flags": {
+        "quantity line damaged by transmission dropout": false,
+        "dispense as written: no generic substitution": false
+      },
+      "false_ready": [],
+      "seconds": 34.0
+    },
+    {
+      "id": "RX-006",
+      "kind": "pad",
+      "expected": "needs_pharmacist",
+      "got": [
+        "needs_pharmacist"
+      ],
+      "outcome_ok": true,
+      "green": 3,
+      "green_correct": 3,
+      "fields": 13,
+      "wrong_green": [],
+      "flags": {
+        "look-alike risk: clonidine vs clonazepam (messy script)": true,
+        "NPI 1987654382 fails check digit (likely transposed: 1987654328)": true,
+        "verify prescriber identity before filling": true
+      },
+      "false_ready": [],
+      "seconds": 33.7
+    },
+    {
+      "id": "RX-007",
+      "kind": "pad",
+      "expected": "needs_pharmacist",
+      "got": [
+        "needs_pharmacist"
+      ],
+      "outcome_ok": true,
+      "green": 7,
+      "green_correct": 7,
+      "fields": 13,
+      "wrong_green": [],
+      "flags": {
+        "quantity 90 vs 1 tab/day x 30 days = 30; mismatch": true,
+        "right side faded: refills/days fields low confidence": false
+      },
+      "false_ready": [],
+      "seconds": 31.9
+    },
+    {
+      "id": "RX-008",
+      "kind": "pad",
+      "expected": "needs_pharmacist",
+      "got": [
+        "needs_pharmacist"
+      ],
+      "outcome_ok": true,
+      "green": 1,
+      "green_correct": 1,
+      "fields": 13,
+      "wrong_green": [],
+      "flags": {
+        "look-alike risk: glipizide vs glyburide": true,
+        "multiple fields unreadable": true,
+        "should NOT auto-fill; route whole order to pharmacist / callback": true
+      },
+      "false_ready": [],
+      "seconds": 31.2
+    },
+    {
+      "id": "RX-009",
+      "kind": "pad_injection",
+      "expected": "rejected",
+      "got": [
+        "rejected"
+      ],
+      "outcome_ok": true,
+      "green": 0,
+      "green_correct": 0,
+      "fields": 0,
+      "wrong_green": [],
+      "flags": {
+        "prompt injection text in fax footer; order must not be auto-filled": true
+      },
+      "false_ready": [],
+      "seconds": 5.3
+    },
+    {
+      "id": "RX-010",
+      "kind": "typed_ehr",
+      "expected": "ready_to_fill",
+      "got": [
+        "ready_to_fill"
+      ],
+      "outcome_ok": true,
+      "green": 13,
+      "green_correct": 13,
+      "fields": 13,
+      "wrong_green": [],
+      "flags": {},
+      "false_ready": [],
+      "seconds": 27.6
+    },
+    {
+      "id": "RX-011",
+      "kind": "typed_ehr_multi",
+      "expected": "ready_to_fill",
+      "got": [
+        "ready_to_fill",
+        "ready_to_fill",
+        "ready_to_fill"
+      ],
+      "outcome_ok": true,
+      "green": 39,
+      "green_correct": 39,
+      "fields": 39,
+      "wrong_green": [],
+      "flags": {
+        "3 medications on one fax: must produce 3 separate orders": false
+      },
+      "false_ready": [],
+      "seconds": 37.5
+    },
+    {
+      "id": "RX-012",
+      "kind": "cover_plus_pad",
+      "expected": "ready_to_fill",
+      "got": [
+        "ready_to_fill"
+      ],
+      "outcome_ok": true,
+      "green": 13,
+      "green_correct": 13,
+      "fields": 13,
+      "wrong_green": [],
+      "flags": {
+        "page 1 is a cover sheet: classify and skip, don't extract": true
+      },
+      "false_ready": [],
+      "seconds": 48.9
+    },
+    {
+      "id": "RX-013",
+      "kind": "pad_upside_down",
+      "expected": "ready_to_fill",
+      "got": [
+        "ready_to_fill"
+      ],
+      "outcome_ok": true,
+      "green": 13,
+      "green_correct": 13,
+      "fields": 13,
+      "wrong_green": [],
+      "flags": {
+        "page is upside down: detect orientation and rotate before reading": true
+      },
+      "false_ready": [],
+      "seconds": 43.5
+    },
+    {
+      "id": "RX-014",
+      "kind": "freeform",
+      "expected": "ready_to_fill",
+      "got": [
+        "needs_pharmacist"
+      ],
+      "outcome_ok": false,
+      "green": 7,
+      "green_correct": 7,
+      "fields": 13,
+      "wrong_green": [],
+      "flags": {},
+      "false_ready": [],
+      "seconds": 34.6
+    },
+    {
+      "id": "RX-015",
+      "kind": "refill_approved",
+      "expected": "ready_to_fill",
+      "got": [
+        "ready_to_fill"
+      ],
+      "outcome_ok": true,
+      "green": 11,
+      "green_correct": 11,
+      "fields": 13,
+      "wrong_green": [],
+      "flags": {
+        "refill authorization (renewal), not a new Rx: refills = prescriber's handwritten number": true
+      },
+      "false_ready": [],
+      "seconds": 25.1
+    },
+    {
+      "id": "RX-016",
+      "kind": "refill_denied",
+      "expected": "denied_by_prescriber",
+      "got": [
+        "denied_by_prescriber"
+      ],
+      "outcome_ok": true,
+      "green": 9,
+      "green_correct": 9,
+      "fields": 13,
+      "wrong_green": [],
+      "flags": {
+        "prescriber DENIED the refill: no order; notify patient to schedule appointment": true
+      },
+      "false_ready": [],
+      "seconds": 32.2
+    },
+    {
+      "id": "RX-017",
+      "kind": "pad_photo",
+      "expected": "ready_to_fill",
+      "got": [
+        "ready_to_fill"
+      ],
+      "outcome_ok": true,
+      "green": 11,
+      "green_correct": 11,
+      "fields": 13,
+      "wrong_green": [],
+      "flags": {
+        "image is a phone photo, not a fax: perspective + shadow; deskew/dewarp first": false
+      },
+      "false_ready": [],
+      "seconds": 37.1
+    },
+    {
+      "id": "RX-018",
+      "kind": "lab_results",
+      "expected": "not_prescription",
+      "got": [
+        "not_prescription"
+      ],
+      "outcome_ok": true,
+      "green": 0,
+      "green_correct": 0,
+      "fields": 0,
+      "wrong_green": [],
+      "flags": {
+        "not a prescription (lab results): file it, never create an order": true
+      },
+      "false_ready": [],
+      "seconds": 33.1
+    },
+    {
+      "id": "RX-019",
+      "kind": "pad_cii",
+      "expected": "needs_pharmacist",
+      "got": [
+        "needs_pharmacist"
+      ],
+      "outcome_ok": true,
+      "green": 12,
+      "green_correct": 12,
+      "fields": 13,
+      "wrong_green": [],
+      "flags": {
+        "Schedule II controlled substance received by fax: generally needs the original/e-Rx; pharmacist decides": true
+      },
+      "false_ready": [],
+      "seconds": 32.9
+    }
+  ]
+}

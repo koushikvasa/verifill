@@ -131,8 +131,8 @@ Devpost sections: name + one-liner, track, what/why, accuracy + uncertainty, too
 
 ---
 
-## Status 14:10
-Backend complete through A7 + B2/B3/B4. 18/19 faxes end with the expected outcome, 0 false ready_to_fill. OCR grounding = Tesseract + RapidOCR (`GROUND_OCR`). Remaining: frontend wiring (Lane C), PRISM dashboard rules (Lane D), B5 prescriber faxes RX-020..022.
+## Status 14:20
+Backend complete through A7 + B2/B3/B4 + Lane H. `python -m scripts.eval`: auto-accept precision 100% (175/175 green fields correct), coverage 71%, flag recall 81%, outcome accuracy 94.7% (18/19), 0 false ready_to_fill. OCR grounding = Tesseract + RapidOCR (`GROUND_OCR`). Remaining: frontend wiring (Lane C), PRISM dashboard rules (Lane D), B5 prescriber faxes RX-020..022.
 
 ## Integration checkpoints
 - **1:45**: RX-001 end to end returns a real Order (A4 done; landed 1:06) → frontend switches off mock data
