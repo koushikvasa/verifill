@@ -110,10 +110,10 @@ Paste `frontend/NINOO_BUILDER_PROMPT.md` into Ninoo Builder. Export the code int
 
 ## Lane D: Sponsors + pitch
 
-### D1 · P0 · PRISM workspace (12:05–12:20)
+### D1 · ✅ P0 · PRISM workspace (12:05–12:20) — done except teammate invites (optional)
 Sign up → Settings → Billing → coupon `PROOFOFWORK` → name the project after the team → invite teammates → Settings → API Keys (custom purpose: send + read traces) → share key + project id privately.
 
-### D2 · P0 · Knowledge Base (12:20–12:50)
+### D2 · ✅ P0 · Knowledge Base (12:20–12:50) — done (48 docs uploaded via scripts/upload_kb.py; checks show grounded_in=prism_kb)
 Run `python -m scripts.upload_kb` (uploads 48 small docs: drugs, look-alike pairs, prescribers, inventory). It ends with a test `kb_search`; screenshot the KB page in the dashboard for Devpost.
 
 ### D3 · P0 · Guardrail rules (12:50–1:10)
@@ -123,13 +123,16 @@ Prompt Injection + PII/PHI Detection rules, action = flag, on agent `verifill-gu
 Evaluator on agent `verifill-score` with this rubric:
 > *A field marked "verified" passes only if at least two independent readers agree on its value AND every grounded check on it passed. Any "verified" field with reader disagreement or a failed check is a FAIL. An order marked ready_to_fill with any non-verified critical field is a FAIL. A green npi/prescriber_name requires a registry match whose name matches the fax. A suggested NPI must never appear as the field value.*
 
-### D5 · P0 · Nicrron
+### D5 · ✅ P0 · Nicrron — done (both models in use)
 Everyone redeems `COLUMBIA26`. Copy base URL + two vision model ids from different vendors into team chat.
 
 ### D6 · P0 · Devpost + video (2:30–4:15)
 Devpost sections: name + one-liner, track, what/why, accuracy + uncertainty, tools (NicrronNinoo + PRISM required), team + roles, video link, GitHub link. Record the 90-second demo from `PLAN.md` at 3:45. **Submit by 4:15**, not 4:29.
 
 ---
+
+## Status 15:05
+Final `python -m scripts.demo_check`: all steps pass with zoom, DEA and live lookups on. Remaining: C2–C4 (frontend), D3 guardrail rules + screenshot, D4 evaluator, D6 Devpost + video (submit by 4:15).
 
 ## Status 14:58
 Backend complete: A0–A9, B2–B4, H1–H9. Live RxNav/NPPES on (`VERIFILL_OFFLINE=0`). `python -m scripts.eval`: precision 100% (175/175), coverage 71%, flag recall 81%, outcomes 18/19, 0 false ready_to_fill. Judge kit 12/12. `python -m scripts.demo_check` passes. 45 offline tests.
