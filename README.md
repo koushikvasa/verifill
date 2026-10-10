@@ -16,7 +16,7 @@ Built at Get Hired Hack @ Columbia Startup Lab (Oct 10, 2026) · Track: Fax to F
 ## Run
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt          # also needs the tesseract binary: brew install tesseract
+pip install -r requirements.txt          # tesseract binary: mac `brew install tesseract`; Windows: UB-Mannheim installer + TESSERACT_CMD in .env
 cp .env.example .env                     # fill in Nicrron + PRISM keys
 python -m backend.tracing                # PRISM handshake
 uvicorn backend.app:app --reload         # http://localhost:8000/docs

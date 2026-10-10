@@ -30,6 +30,13 @@ OFFLINE = os.getenv("VERIFILL_OFFLINE", "1") == "1"
 RXNAV_URL = "https://rxnav.nlm.nih.gov/REST"
 NPPES_URL = "https://npiregistry.cms.hhs.gov/api/"
 
+# Tesseract binary. Windows: install from github.com/UB-Mannheim/tesseract/wiki, then
+# TESSERACT_CMD=C:\\Program Files\\Tesseract-OCR\\tesseract.exe  (leave empty on mac/linux)
+TESSERACT_CMD = os.getenv("TESSERACT_CMD", "")
+if TESSERACT_CMD:
+    import pytesseract as _pt
+    _pt.pytesseract.tesseract_cmd = TESSERACT_CMD
+
 # Scoring thresholds
 OCR_GREEN = float(os.getenv("OCR_GREEN", "0.80"))
 OCR_AMBER = float(os.getenv("OCR_AMBER", "0.55"))

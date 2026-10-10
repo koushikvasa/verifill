@@ -9,7 +9,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel
 
 from backend import config, pipeline
@@ -18,6 +18,11 @@ from backend.models import Order
 app = FastAPI(title="Verifill")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 ORDERS: dict[str, Order] = {}
+
+
+@app.get("/", include_in_schema=False)
+def root():
+    return RedirectResponse("/docs")
 
 
 @app.get("/health")
